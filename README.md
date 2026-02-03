@@ -452,7 +452,7 @@ It continues exactly where you left off, including:
 
 ### Test Environment
 
-First time you run `/pp work`, you'll set up test credentials:
+Test credentials are asked **once** when config doesn't exist, then reused for all tasks.
 
 ```json
 // pp/config/test-env.json (auto-generated, gitignored)
@@ -463,6 +463,19 @@ First time you run `/pp work`, you'll set up test credentials:
   "baseUrl": "https://example.com",
   "createdAt": "2026-02-03T10:00:00Z"
 }
+```
+
+**To change test config for a specific task**, say:
+- "change test config"
+- "use different credentials"
+- "different env for this task"
+
+You'll be asked:
+```
+How do you want to update the test config?
+- "Update for this task only" — Temporary override
+- "Update permanently" — Replace saved config
+- "Never mind" — Keep existing
 ```
 
 ### Session Preferences
