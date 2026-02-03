@@ -10,6 +10,27 @@ A powerful task management system that combines quick capture with deep understa
 
 **Core Philosophy:** Understand before building. Ask questions when uncertain. Verify goals were achieved.
 
+## CRITICAL: Follow the Workflow
+
+**When `/pp work` is invoked, you MUST follow the workflow in [work action](./actions/work.md) step by step.**
+
+**NEVER:**
+- Implement directly without creating folder structure first
+- Skip the claim step (moving REQ to working/)
+- Delegate file operations to agents
+- Skip test generation (if Playwright enabled)
+- Skip archiving completed work
+
+**ALWAYS:**
+- Run `mkdir -p pp/{config,research,working,archive} tests/pp` first
+- Move REQ file to `pp/working/` before implementation
+- Update STATE.md at each step
+- Generate Playwright tests yourself (not via agents)
+- Run the test loop until pass/skip
+- Move completed work to `pp/archive/`
+
+**The work action file contains an Orchestrator Checklist. Use it.**
+
 ## Session Setup (First-Time Prompt)
 
 On the **first `/pp` command** in a new session, ask THREE questions:

@@ -2,256 +2,217 @@
 
 > **Part of the power-pack skill.** Processes pending requests with auto-research, implementation, and automated Playwright testing with fix loops.
 
-## Overview
+## CRITICAL: Orchestrator Responsibilities
 
-For each task in the queue:
-1. **Analyze** — Does this need research? (auto-detect)
-2. **Research** — If needed, gather best practices
-3. **Explore** — Find existing patterns in codebase (Explore agent)
-4. **Plan** — For complex tasks, create detailed plan (Plan agent)
-5. **Implement** — Build the feature (general-purpose agent)
-6. **Generate Tests** — Create Playwright scripts based on "Done When"
-7. **Test Loop** — Run tests, fix failures, rerun until pass
-8. **Archive** — When tests pass (or skip problematic tests)
+The work action is an **orchestrator**. You (the orchestrator) are responsible for ALL file management and folder operations. Spawned agents do implementation work but do NOT touch request files, folder structure, or test generation.
 
-**Agents used:**
-- **Explore agent** — Finds existing patterns, file locations
-- **Plan agent** — Creates step-by-step implementation plan (complex tasks)
-- **general-purpose agent** — Implements the feature
+**You MUST do these yourself (NEVER delegate to agents):**
+- Create folder structure (`mkdir -p pp/working`, `pp/archive`, etc.)
+- Move request files between folders
+- Update frontmatter status fields
+- Generate Playwright test files
+- Run the test loop
+- Create VERIFICATION.md reports
+- Archive completed work
+- Create git commits
 
-## Test Environment
+**Agents do:**
+- Research (web search, Context7)
+- Explore codebase patterns
+- Create implementation plans
+- Write the actual code implementation
+- Fix code when tests fail
 
-Before processing, verify test config exists:
+---
+
+## Pre-Flight Checks
+
+**[Orchestrator action - do this yourself BEFORE anything else]**
+
+### Check 1: Folder Structure
+
+**IMPORTANT: You MUST create these folders if they don't exist. Do NOT skip this step.**
+
+```bash
+mkdir -p pp/config
+mkdir -p pp/research
+mkdir -p pp/working
+mkdir -p pp/archive
+mkdir -p tests/pp
+```
+
+Run this command NOW before proceeding.
+
+### Check 2: Session Preferences
+
+Check if session preferences have been set. If not, you should have asked during `/pp status` or first command:
+- Session mode (Normal/Overnight)
+- Auto-commit (Yes/No)
+- Playwright testing (Yes/No)
+
+### Check 3: Test Environment (if Playwright enabled)
+
+**If user selected "Yes" for Playwright testing:**
 
 ```bash
 cat pp/config/test-env.json 2>/dev/null
 ```
 
-If missing, stop and ask user to run capture first to set up test environment.
+If this file doesn't exist AND Playwright testing is enabled:
+- STOP and ask user for test credentials
+- Create `pp/config/test-env.json` with credentials
+- Add to `.gitignore`
 
-**Config structure:**
-```json
-{
-  "loginUrl": "https://example.com/login",
-  "username": "test_user",
-  "password": "***",
-  "baseUrl": "https://example.com",
-  "envFile": "/path/to/.env",
-  "createdAt": "2026-02-03T10:00:00Z"
-}
+**If user selected "No" for Playwright testing:**
+- Skip test-env.json check entirely
+- Skip Steps 8-10 (test generation, test loop, verification) during workflow
+
+### Check 4: Pending Requests
+
+```bash
+ls pp/REQ-*.md 2>/dev/null
 ```
 
-## Workflow
+If no REQ files found, report: "Queue empty. Use `/pp add <task>` to capture tasks."
+
+---
+
+## Workflow Steps
 
 ### Step 1: Find Next Request
 
-List `REQ-*.md` files in `pp/` folder, pick the first one (sorted by number).
+**[Orchestrator action - do this yourself]**
 
-If no requests found, report queue empty and exit.
+```bash
+ls pp/REQ-*.md 2>/dev/null | head -1
+```
+
+Pick the first REQ file (sorted by number). If empty, exit with "Queue empty."
 
 ### Step 2: Claim the Request
 
-1. Create `pp/working/` if it doesn't exist
-2. Move request file to `pp/working/`
-3. Update frontmatter:
+**[Orchestrator action - do this yourself, BEFORE spawning any agents]**
 
+**IMPORTANT: You MUST perform these file operations yourself. Do NOT skip them.**
+
+1. **Create working folder:**
+```bash
+mkdir -p pp/working
+```
+
+2. **Move request file:**
+```bash
+mv pp/REQ-XXX-slug.md pp/working/
+```
+
+3. **Update frontmatter** in the moved file:
 ```yaml
 ---
 status: claimed
 claimed_at: 2026-02-03T10:30:00Z
 ---
 ```
+
+4. **Update STATE.md:**
+```markdown
+## Current Position
+
+**Status:** working
+**Working on:** REQ-XXX-slug
+**Step:** claim
+**Last activity:** [timestamp]
+```
+
+**DO NOT proceed to the next step until the file is moved to working/.**
 
 ### Step 3: Analyze — Needs Research?
 
-Read the task content and auto-detect if research is needed.
+**[Orchestrator action - do this yourself]**
 
-**Research triggers (if ANY match → research):**
+Read the task content and determine if research is needed.
 
-| Pattern | Keywords/Signals |
-|---------|------------------|
-| External API | `integrate`, `API`, `stripe`, `twilio`, `firebase`, `aws`, `sendgrid`, `slack`, `github api` |
-| Protocols | `oauth`, `jwt`, `websocket`, `sse`, `graphql`, `grpc`, `mqtt` |
-| Real-time | `real-time`, `live`, `realtime`, `push notification`, `sync` |
-| Payments | `payment`, `checkout`, `billing`, `subscription`, `charge` |
-| Security | `encrypt`, `hash`, `secure`, `authentication` (when new system, not fixing) |
-| Caching | `cache`, `redis`, `memcached`, `caching layer` |
-| Queues | `queue`, `job`, `worker`, `background task`, `async processing` |
-| New SDK | `sdk`, `library` + unfamiliar name |
+**Research triggers (if ANY match → needs research):**
+- External APIs: `stripe`, `twilio`, `firebase`, `aws`, `sendgrid`
+- Protocols: `oauth`, `jwt`, `websocket`, `graphql`, `grpc`
+- Real-time: `real-time`, `realtime`, `live update`, `push notification`
+- Payments: `payment`, `checkout`, `billing`, `subscription`
+- New tech: unfamiliar libraries, SDKs, frameworks
 
-**Skip research (just explore codebase):**
+**Skip research for:**
+- Bug fixes, UI changes, config changes, simple CRUD, refactoring
 
-| Pattern | Keywords/Signals |
-|---------|------------------|
-| Bug fixes | `fix`, `bug`, `error`, `broken`, `crash`, `issue`, `not working` |
-| UI changes | `button`, `field`, `form`, `modal`, `style`, `css`, `layout`, `color` |
-| Simple CRUD | `add endpoint`, `create api`, `delete`, `update` (basic operations) |
-| Config | `config`, `setting`, `timeout`, `env`, `variable` |
-| Refactor | `rename`, `refactor`, `move`, `reorganize`, `clean up` |
-| Text changes | `text`, `copy`, `label`, `message`, `title` |
-
-**Detection logic:**
-
-```python
-def needs_research(task_content):
-    content_lower = task_content.lower()
-
-    # Skip patterns (check first)
-    skip_patterns = [
-        'fix', 'bug', 'error', 'broken', 'crash',
-        'button', 'style', 'css', 'color', 'layout',
-        'rename', 'refactor', 'move', 'clean',
-        'config', 'setting', 'timeout'
-    ]
-    if any(pattern in content_lower for pattern in skip_patterns):
-        return False
-
-    # Research patterns
-    research_patterns = [
-        'integrate', 'oauth', 'jwt', 'websocket', 'graphql',
-        'real-time', 'realtime', 'live update',
-        'payment', 'stripe', 'checkout', 'billing',
-        'encrypt', 'firebase', 'aws', 'twilio',
-        'redis', 'cache', 'queue', 'worker'
-    ]
-    if any(pattern in content_lower for pattern in research_patterns):
-        return True
-
-    return False
-```
-
-**Update frontmatter with decision:**
-
+**Update frontmatter:**
 ```yaml
 ---
 status: claimed
-claimed_at: 2026-02-03T10:30:00Z
 needs_research: true  # or false
 ---
 ```
 
+**Append to request file:**
+```markdown
+---
+
+## Analysis
+
+**Needs Research:** Yes/No
+**Reason:** [Brief explanation]
+**Detected triggers:** [list any matching patterns]
+```
+
 ### Step 4: Research (If Needed)
 
-**If `needs_research: false`:** Skip to Step 5 (Implement).
+**[Spawn agents for research, then orchestrator writes results]**
+
+**If `needs_research: false`:** Skip to Step 5.
 
 **If `needs_research: true`:**
 
-1. **Identify research topic:**
-   - Extract the core technology/integration from task
-   - e.g., "add WebSocket notifications" → research topic: "WebSocket real-time notifications"
+1. **Create research folder:**
+```bash
+mkdir -p pp/research
+```
 
-2. **Run research:**
-
-   Use Context7 and web sources to gather:
+2. **Spawn research** using WebSearch and/or Context7:
+   - Best practices for the technology
    - Recommended libraries/versions
-   - Implementation patterns
-   - Common pitfalls
-   - Code examples
+   - Common pitfalls to avoid
 
-   ```
-   # Context7 for library docs
-   mcp__context7__resolve-library-id with libraryName: "[library]"
-   mcp__context7__get-library-docs with topic: "[specific pattern]"
+3. **Create research file** at `pp/research/REQ-XXX-RESEARCH.md`:
+```markdown
+# Research: REQ-XXX [Title]
 
-   # Web for best practices
-   WebSearch for "[technology] best practices 2026"
-   WebSearch for "[technology] common mistakes"
-   ```
+**Generated:** [timestamp]
+**Topic:** [technology]
 
-3. **Create research file:**
+## Recommended Stack
+| Component | Choice | Version | Reason |
+|-----------|--------|---------|--------|
 
-   Location: `pp/research/REQ-XXX-RESEARCH.md`
+## Implementation Patterns
+[Code examples]
 
-   ```markdown
-   # Research: REQ-XXX [Task Title]
+## Common Pitfalls
+| Pitfall | Prevention |
+|---------|------------|
 
-   **Generated:** 2026-02-03
-   **Topic:** [Core technology/integration]
-
-   ## Recommended Stack
-
-   | Component | Choice | Version | Reason |
-   |-----------|--------|---------|--------|
-   | [Component] | [Library] | [Version] | [Why] |
-
-   ## Implementation Patterns
-
-   ### [Pattern 1 Name]
-   [Description and when to use]
-
-   ```[language]
-   [Code example]
-   ```
-
-   ### [Pattern 2 Name]
-   [Description and when to use]
-
-   ```[language]
-   [Code example]
-   ```
-
-   ## Common Pitfalls
-
-   | Pitfall | Prevention |
-   |---------|------------|
-   | [Issue 1] | [How to avoid] |
-   | [Issue 2] | [How to avoid] |
-
-   ## Security Considerations
-
-   - [Security point 1]
-   - [Security point 2]
-
-   ## References
-
-   - [Source 1]
-   - [Source 2]
-
-   ---
-   *Auto-generated research for power-pack*
-   ```
+## References
+- [sources]
+```
 
 4. **Update frontmatter:**
+```yaml
+---
+status: researched
+research_file: pp/research/REQ-XXX-RESEARCH.md
+---
+```
 
-   ```yaml
-   ---
-   status: researched
-   research_file: pp/research/REQ-XXX-RESEARCH.md
-   ---
-   ```
-
-5. **Report research summary:**
-
-   ```
-   Researching: WebSocket notification system...
-
-   ◆ Checking Context7 for Socket.io docs...
-   ◆ Fetching best practices...
-   ◆ Identifying pitfalls...
-
-   Created: pp/research/REQ-015-RESEARCH.md
-
-   Key findings:
-   - Library: Socket.io v4.7 (browser fallbacks)
-   - Pattern: Heartbeat + exponential backoff
-   - Pitfall: Auth token refresh on reconnect
-
-   Proceeding to implementation...
-   ```
+5. **Update STATE.md:** `Step: researched`
 
 ### Step 5: Explore Codebase
 
-Before implementing, explore the existing codebase to find patterns and relevant files.
-
-**Skip exploration if:**
-- Task is a simple bug fix with clear file mentioned
-- Task is config/value change
-- Already know exactly what to modify
-
-**Run exploration for:**
-- New features
-- Tasks that need to follow existing patterns
-- When location is unclear
+**[Spawn Explore agent, then orchestrator stores results]**
 
 Spawn an **Explore agent**:
 
@@ -265,35 +226,58 @@ For this request:
 ## Research (if exists)
 [Summary from RESEARCH.md]
 
-Find the relevant files and patterns needed to implement this:
+Find the relevant files and patterns:
 1. Where should this change be made?
 2. What existing patterns should we follow?
-3. Related types/interfaces to use
-4. Testing patterns if applicable
+3. Related types/interfaces
+4. Testing patterns
 
-Return a summary with specific file paths and code patterns to follow.
+Return specific file paths and code patterns.
 ", subagent_type="Explore")
 ```
 
 **After Explore agent returns:**
 - Store exploration output for implementation
-- Note: If exploration finds the task is more complex than expected, may need to spawn Plan agent
+- Update STATE.md: `Step: explored`
+
+**Append to request file:**
+```markdown
+## Exploration
+
+[Output from Explore agent]
+
+*Generated by Explore agent*
+```
 
 ### Step 6: Plan (Complex Tasks Only)
 
-For complex tasks (multi-file, architectural), create a detailed plan.
+**[Spawn Plan agent for complex tasks, orchestrator writes plan to file]**
 
 **Triggers for planning:**
 - Exploration found 5+ files to modify
 - New architectural pattern needed
-- Multiple components involved
 - Research recommended specific implementation order
 
-Spawn a **Plan agent**:
+If simple task, skip planning and append:
+```markdown
+## Plan
+
+**Planning not required** - Simple task, direct implementation.
+
+*Skipped by work action*
+```
+
+For complex tasks, spawn **Plan agent** and append full plan to request file.
+
+### Step 7: Implement the Feature
+
+**[Spawn general-purpose agent - agent writes code, orchestrator monitors]**
+
+Spawn a **general-purpose agent** with all context:
 
 ```
 Task(prompt="
-Create an implementation plan for this request:
+Implement this feature:
 
 ## Request
 [Full content of request file]
@@ -304,114 +288,54 @@ Create an implementation plan for this request:
 ## Codebase Context
 [From Explore agent]
 
-Create a detailed plan including:
-1. Files to create/modify (in order)
-2. Key changes in each file
-3. Dependencies between changes
-4. Testing approach
-
-Be specific about file paths and function names.
-", subagent_type="Plan")
-```
-
-**After Plan agent returns:**
-- Store plan for implementation
-- Implementation will follow the plan step by step
-
-### Step 7: Implement the Feature
-
-Spawn a **general-purpose agent** with all available context.
-
-**With research + exploration + plan (full context):**
-
-```
-Task(prompt="
-Implement this feature:
-
-## Request
-[Full content of request file]
-
-## Research Context
-[From RESEARCH.md - recommended stack, patterns, pitfalls]
-
-## Codebase Context
-[From Explore agent - existing patterns, file locations]
-
-## Implementation Plan
-[From Plan agent - step by step approach]
+## Implementation Plan (if exists)
+[From Plan agent]
 
 ## Instructions
-- Follow the implementation plan
-- Use patterns from codebase context
-- Apply recommendations from research
-- Avoid pitfalls identified in research
-- Focus on the 'Done When' criteria
-
-When complete, provide a summary of what files were changed.
-", subagent_type="general-purpose")
-```
-
-**With exploration only (medium complexity):**
-
-```
-Task(prompt="
-Implement this feature:
-
-## Request
-[Full content of request file]
-
-## Codebase Context
-[From Explore agent]
-
-## Instructions
-- Follow existing patterns from codebase context
-- Focus on the 'Done When' criteria
+- Follow the plan and patterns
+- Focus on 'Done When' criteria
 - Make minimal, focused changes
 
-When complete, provide a summary of what files were changed.
+When complete, provide a summary of files changed.
 ", subagent_type="general-purpose")
 ```
 
-**Simple task (no exploration/research):**
+**After implementation:**
+- Capture summary of changes
+- Update STATE.md: `Step: implemented`
 
+**Append to request file:**
+```markdown
+## Implementation Summary
+
+[Summary from agent]
+
+*Completed by general-purpose agent*
 ```
-Task(prompt="
-Implement this feature:
-
-## Request
-[Full content of request file]
-
-## Instructions
-- Implement the feature as described
-- Focus on the 'Done When' criteria
-- Make minimal, focused changes
-
-When complete, provide a summary of what files were changed.
-", subagent_type="general-purpose")
-```
-
-Capture the implementation summary.
 
 ### Step 8: Generate Playwright Tests
 
-Based on the "Done When" criteria in the REQ file, generate Playwright test scripts.
+**[Orchestrator action - do this yourself]**
 
-**Read test config:**
+**SKIP this step if user selected "No" for Playwright testing.**
+
+**IMPORTANT: You MUST create the test file yourself. Do NOT delegate to agents.**
+
+1. **Create tests folder:**
 ```bash
-TEST_CONFIG=$(cat pp/config/test-env.json)
+mkdir -p tests/pp
 ```
 
-**Read REQ file for test criteria:**
-- `test_url` from frontmatter
-- "Done When" section for assertions
-- Feature description for test context
+2. **Read test config:**
+```bash
+cat pp/config/test-env.json
+```
 
-**Create test file:**
+3. **Read "Done When" criteria** from the request file
 
-Location: `tests/pp/REQ-XXX-slug.spec.js`
+4. **Create test file** at `tests/pp/REQ-XXX-slug.spec.js`:
 
 ```javascript
-// tests/pp/REQ-013-logout-button.spec.js
 const { test, expect } = require('@playwright/test');
 
 const config = {
@@ -419,176 +343,148 @@ const config = {
   username: '[from test-env.json]',
   password: '[from test-env.json]',
   baseUrl: '[from test-env.json]',
-  testUrl: '[from REQ frontmatter]'
+  testUrl: '[from REQ frontmatter or determine from feature]'
 };
 
-test.describe('REQ-013: [Title from REQ]', () => {
+test.describe('REQ-XXX: [Title]', () => {
 
   test.beforeEach(async ({ page }) => {
     // Login
     await page.goto(config.loginUrl);
-    await page.fill('[name="username"], [name="email"], #username, #email', config.username);
-    await page.fill('[name="password"], #password', config.password);
-    await page.click('button[type="submit"], input[type="submit"]');
-    await page.waitForURL(url => !url.includes('login'));
+    await page.locator('[name="username"], [name="email"], #username, #email').first().fill(config.username);
+    await page.locator('[name="password"], #password').first().fill(config.password);
+    await page.locator('button[type="submit"], input[type="submit"]').first().click();
+    await page.waitForURL(url => !url.pathname.includes('login'), { timeout: 10000 });
 
-    // Navigate to test URL
+    // Navigate to test page
     await page.goto(config.testUrl);
+    await page.waitForLoadState('networkidle');
   });
 
-  // Generate one test per "Done When" criterion
-  test('[criterion 1 from Done When]', async ({ page }) => {
-    // Test assertion based on criterion
+  // One test per "Done When" criterion
+  test('[criterion 1]', async ({ page }) => {
+    // assertion
   });
 
-  test('[criterion 2 from Done When]', async ({ page }) => {
-    // Test assertion based on criterion
+  test('[criterion 2]', async ({ page }) => {
+    // assertion
   });
 
 });
 ```
 
-**Test generation guidelines:**
-
-| Done When Criterion | Playwright Test |
-|---------------------|-----------------|
-| "Button exists in header" | `await expect(page.locator('header button')).toBeVisible()` |
-| "Clicking X redirects to /Y" | `await page.click('X'); await expect(page).toHaveURL(/Y/)` |
-| "Form shows error for invalid input" | `await page.fill(...); await expect(page.locator('.error')).toBeVisible()` |
-| "Page loads in under 2 seconds" | `const start = Date.now(); await page.goto(...); expect(Date.now() - start).toBeLessThan(2000)` |
-| "Data is saved" | `await page.fill(...); await page.click('save'); await page.reload(); await expect(page.locator('...')).toHaveText(...)` |
+5. **Update STATE.md:** `Step: tests_generated`
 
 ### Step 9: Run Test Loop
 
+**[Orchestrator action - do this yourself]**
+
+**SKIP this step if Playwright testing is disabled.**
+
+**IMPORTANT: You MUST run this loop yourself. Do NOT skip it.**
+
+Initialize tracking:
 ```
-TEST LOOP
-┌──────────────────────────────────────────────────┐
-│  Run: npx playwright test tests/pp/REQ-XXX-*.spec.js
-│       │                                           │
-│  All tests pass? ──Yes──► EXIT LOOP (success)    │
-│       │                                           │
-│      No                                           │
-│       │                                           │
-│  For each failed test:                           │
-│       │                                           │
-│  Classify failure type                           │
-│       │                                           │
-│  ┌─ Infrastructure issue? ──────────────────┐    │
-│  │  (403, 401, connection refused, CORS,    │    │
-│  │   SSL, DNS, Playwright crash)            │    │
-│  │       │                                  │    │
-│  │      Yes ──► Mark SKIPPED (infra)       │    │
-│  │             Continue to next test        │    │
-│  └──────────────────────────────────────────┘    │
-│       │                                           │
-│      No (code issue: 500, assertion, exception)  │
-│       │                                           │
-│  Same test failed >10 times?                     │
-│       │                                           │
-│      Yes ──► Mark SKIPPED (max attempts)         │
-│              Continue to next test               │
-│       │                                           │
-│      No                                           │
-│       │                                           │
-│  Analyze failure, fix code                       │
-│       │                                           │
-│  Increment attempt counter for this test         │
-│       │                                           │
-│  Rerun all non-skipped tests ◄───────────────────┘
-└──────────────────────────────────────────────────┘
+test_attempts = {}  # { "test name": attempt_count }
+skipped_tests = []
+max_attempts = 10
 ```
 
-**Failure classification:**
+**Test Loop:**
 
-| Error Pattern | Type | Action |
-|---------------|------|--------|
-| `net::ERR_CONNECTION_REFUSED` | infra | skip |
-| `403 Forbidden` | infra | skip |
-| `401 Unauthorized` | infra | skip |
-| `CORS policy` | infra | skip |
-| `SSL_ERROR` / `CERT_` | infra | skip |
-| `DNS_PROBE_FINISHED` | infra | skip |
-| `browser has been closed` | playwright | skip |
-| `Target closed` | playwright | skip |
-| `500 Internal Server Error` | code | try fix |
-| `502 Bad Gateway` | code | try fix |
-| `503 Service Unavailable` | code | try fix |
-| `expect(...).toBe` failed | code | try fix |
-| `Element not found` | code | try fix |
-| `Timeout waiting for` | code | try fix (might be infra after 10) |
-
-**Fixing code issues:**
-
-When a test fails due to code:
-1. Read the error message and stack trace
-2. Identify the likely cause
-3. Fix the code (edit the relevant file)
-4. Rerun the test
-
-Use the error context to guide fixes:
-- Assertion failed → Check the implementation logic
-- Element not found → Check selectors, element existence
-- 500 error → Check server-side code, add error handling
-- Timeout → Check async operations, loading states
-
-**Tracking attempts:**
-
-Maintain a counter per test:
 ```
-{
-  "logout button exists": { attempts: 3, status: "passing" },
-  "logout redirects": { attempts: 7, status: "failing" },
-  "session cleared": { attempts: 10, status: "skipped", reason: "max_attempts" }
-}
+WHILE there are non-skipped tests:
+
+    1. Run tests:
+       npx playwright test tests/pp/REQ-XXX-*.spec.js --reporter=list
+
+    2. IF all tests pass:
+       → EXIT LOOP (success)
+
+    3. FOR each failed test:
+
+       a. Classify failure:
+          - Infrastructure (403, 401, CORS, connection refused, SSL)
+            → Mark as SKIPPED (infra), continue
+
+          - Playwright crash (browser closed, target closed)
+            → Mark as SKIPPED (playwright), continue
+
+          - Code issue (500, assertion failed, element not found)
+            → Proceed to fix attempt
+
+       b. Check attempt count:
+          IF test_attempts[test_name] >= 10:
+            → Mark as SKIPPED (max_attempts), continue
+
+       c. Increment attempt counter:
+          test_attempts[test_name] += 1
+
+       d. Analyze and fix:
+          - Read error message
+          - Fix the CODE (not the test)
+          - Use Edit tool to make changes
+
+    4. RERUN all non-skipped tests
+```
+
+**Update STATE.md after each iteration:**
+```markdown
+## In Progress
+
+| Field | Value |
+|-------|-------|
+| Step | testing |
+| Tests total | 5 |
+| Tests passed | 3 |
+| Tests skipped | 1 |
+| Current test | [name] |
+| Attempt | 4/10 |
+| Last error | [error] |
 ```
 
 ### Step 10: Generate Verification Report
 
-After test loop completes, create `pp/working/REQ-XXX-VERIFICATION.md`:
+**[Orchestrator action - do this yourself]**
+
+**SKIP this step if Playwright testing is disabled.**
+
+**Create** `pp/working/REQ-XXX-VERIFICATION.md`:
 
 ```markdown
-# Test Report: REQ-XXX [Title]
+# Verification Report: REQ-XXX [Title]
 
-**Status:** [PASS | PARTIAL PASS | FAIL]
-**Date:** 2026-02-03
+**Status:** [PASS | PARTIAL | FAIL]
+**Date:** [timestamp]
 **Test File:** tests/pp/REQ-XXX-slug.spec.js
 
 ## Results
 
 | Test | Status | Attempts | Notes |
 |------|--------|----------|-------|
-| logout button exists | ✓ PASS | 1 | |
-| logout redirects to /login | ✓ PASS | 3 | Fixed redirect path |
-| session is cleared | ⚠ SKIPPED | 10 | Auto-skipped: Failed 10 times |
-| admin access | ⚠ SKIPPED | 1 | Auto-skipped: 403 Forbidden (infra) |
+| [test 1] | ✓ PASS | 1 | |
+| [test 2] | ✓ PASS | 3 | Fixed: [what] |
+| [test 3] | ⚠ SKIPPED | 10 | Max attempts |
+| [test 4] | ⚠ SKIPPED | 1 | 403 Forbidden (infra) |
 
 ## Skipped Tests
 
-### session is cleared
-- **Reason:** Failed 10 consecutive times
-- **Last error:** `Expected URL to match /login, got /dashboard`
-- **Recommendation:** Manual investigation needed
-
-### admin access
-- **Reason:** Infrastructure/permission issue
-- **Error:** `403 Forbidden`
-- **Why skipped:** Cannot fix with code — server permission config needed
-- **Recommendation:** Check server permissions for test user
+### [test name]
+- **Reason:** [max_attempts | infra_permission | infra_connection]
+- **Last error:** [error message]
+- **Recommendation:** [what to check]
 
 ## Auto-Fixed During Testing
 
 | Test | Error | Fix Applied | Attempt |
 |------|-------|-------------|---------|
-| logout redirects | Wrong redirect path | Changed `/home` to `/login` in logout.php | 2 |
-| logout redirects | Missing await | Added async handling | 3 |
+| [test] | [error] | [fix] | [#] |
 
 ## Summary
 
-- **Passed:** 2/4 tests
-- **Skipped:** 2/4 tests
-  - 1 max attempts exceeded
-  - 1 infrastructure issue
-- **Auto-fixed:** 2 issues during test loop
+- **Passed:** X/Y tests
+- **Skipped:** Z tests
+- **Auto-fixed:** N issues
 
 ---
 *Generated by power-pack automated testing*
@@ -596,39 +492,62 @@ After test loop completes, create `pp/working/REQ-XXX-VERIFICATION.md`:
 
 ### Step 11: Archive
 
-1. Update REQ frontmatter:
+**[Orchestrator action - do this yourself]**
+
+**IMPORTANT: You MUST perform these operations. Do NOT skip.**
+
+1. **Update request frontmatter:**
 ```yaml
 ---
 status: completed
 completed_at: 2026-02-03T11:00:00Z
-tests_passed: 2
-tests_skipped: 2
-tests_total: 4
+tests_passed: X
+tests_skipped: Y
+tests_total: Z
 ---
 ```
 
-2. Move files to archive:
+2. **Create archive folder:**
 ```bash
 mkdir -p pp/archive
+```
+
+3. **Move files to archive:**
+```bash
 mv pp/working/REQ-XXX-*.md pp/archive/
 ```
 
-3. Handle UR folder archival (same as do-work):
-   - If all REQs for a UR are complete → move UR folder to archive
+4. **Handle UR folder** (if applicable):
+   - Check if all REQs for this UR are complete
+   - If yes, move UR folder to archive
+
+5. **Update STATE.md:**
+```markdown
+## Current Position
+
+**Status:** idle
+**Working on:** None
+
+## Recent Completions
+
+| REQ | Title | Tests | Result | Commit | Date |
+|-----|-------|-------|--------|--------|------|
+| REQ-XXX | [title] | X/Y | ✓ | [hash] | [date] |
+```
 
 ### Step 12: Commit (If Enabled)
 
-**Check session preference:** Only commit if user selected "Yes" to auto-commit at session start.
+**[Orchestrator action - do this yourself]**
 
-**If auto-commit is DISABLED:**
+**Check session preference:** Only commit if auto-commit = Yes.
+
+**If auto-commit disabled:**
 ```
-Skipping commit (auto-commit disabled for this session).
-Changes are staged but not committed. Run `git commit` when ready.
+Skipping commit (auto-commit disabled).
+Changes ready. Run `git add . && git commit` when ready.
 ```
 
-**If auto-commit is ENABLED:**
-
-Create git commit with all changes:
+**If auto-commit enabled:**
 
 ```bash
 git add -A
@@ -638,7 +557,7 @@ git commit -m "$(cat <<'EOF'
 Implements: pp/archive/REQ-XXX-slug.md
 Tests: tests/pp/REQ-XXX-slug.spec.js
 
-- [implementation summary]
+- [implementation summary bullets]
 - Tests: X/Y passed, Z skipped
 
 Co-Authored-By: Claude <noreply@anthropic.com>
@@ -646,398 +565,94 @@ EOF
 )"
 ```
 
+**Update request frontmatter with commit hash.**
+
 ### Step 13: Loop or Exit
 
-Re-check `pp/` for pending REQ files:
-- If found: continue to next request
-- If empty: report summary and exit
+**[Orchestrator action - do this yourself]**
+
+```bash
+ls pp/REQ-*.md 2>/dev/null
+```
+
+- If more REQ files found: Report completion, then start Step 1 again
+- If empty: Report final summary and exit
+
+---
+
+## Orchestrator Checklist (per request)
+
+**Use this checklist to ensure you don't skip critical steps:**
+
+```
+□ Pre-flight: mkdir -p pp/{config,research,working,archive} tests/pp
+□ Pre-flight: Check test-env.json exists (if Playwright enabled)
+□ Step 1: ls pp/REQ-*.md, pick first one
+□ Step 2: mv pp/REQ-XXX.md pp/working/
+□ Step 2: Update frontmatter: status: claimed
+□ Step 3: Analyze for research needs, append ## Analysis section
+□ Step 4: (if needed) Create pp/research/REQ-XXX-RESEARCH.md
+□ Step 5: Spawn Explore agent, append ## Exploration section
+□ Step 6: (if complex) Spawn Plan agent, append ## Plan section
+□ Step 7: Spawn implementation agent, append ## Implementation Summary
+□ Step 8: (if Playwright enabled) Create tests/pp/REQ-XXX.spec.js
+□ Step 9: (if Playwright enabled) Run test loop until pass/skip
+□ Step 10: (if Playwright enabled) Create pp/working/REQ-XXX-VERIFICATION.md
+□ Step 11: Update frontmatter: status: completed
+□ Step 11: mv pp/working/REQ-XXX*.md pp/archive/
+□ Step 12: (if auto-commit) git add -A && git commit
+□ Step 13: Check for more REQs, loop or exit
+```
+
+---
+
+## Common Mistakes to Avoid
+
+- **NOT creating folders first** - Always run mkdir -p before moving files
+- **Skipping the claim step** - File MUST be in working/ before implementation
+- **Delegating file operations to agents** - You must move files yourself
+- **Forgetting test generation** - Create the spec.js file yourself
+- **Skipping the test loop** - Run tests even if implementation "looks good"
+- **Not archiving** - Files MUST move to archive/ when complete
+- **Implementing directly** - Never implement without first claiming the REQ file
+
+---
 
 ## Progress Reporting
 
 Keep user informed:
 
-**With auto-commit enabled:**
 ```
 Processing REQ-013-logout-button.md...
-  Implementing...        [done]
-  Generating tests...    [done] → 4 test cases
+  Claiming...          [done] → moved to working/
+  Analyzing...         [done] → no research needed
+  Exploring...         [done] → found patterns
+  Implementing...      [done] → 2 files changed
+  Generating tests...  [done] → 4 test cases
   Running tests...
     ✓ logout button exists (1/1)
-    ✓ logout redirects (3/3) — fixed: redirect path, async
+    ✓ logout redirects (3/3) — fixed: redirect path
     ⚠ session cleared (10/10) — SKIPPED: max attempts
-    ⚠ admin access (1/1) — SKIPPED: 403 Forbidden
+  Verification...      [done] → VERIFICATION.md created
+  Archiving...         [done] → moved to archive/
+  Committing...        [done] → abc1234
 
-  Result: 2/4 passed, 2 skipped, 2 auto-fixed
-  Archiving...           [done]
-  Committing...          [done] → abc1234
-
-⚠ 2 tests skipped. See VERIFICATION.md for details.
+⚠ 1 test skipped. See VERIFICATION.md for details.
 
 Checking for more requests...
-Queue empty. All done!
-
-Summary:
-  - REQ-013: 2/4 tests passed, 2 skipped → abc1234
+Queue empty. Done!
 ```
 
-**With auto-commit disabled:**
-```
-Processing REQ-013-logout-button.md...
-  Implementing...        [done]
-  Generating tests...    [done] → 4 test cases
-  Running tests...
-    ✓ logout button exists (1/1)
-    ✓ logout redirects (3/3) — fixed: redirect path, async
-    ⚠ session cleared (10/10) — SKIPPED: max attempts
-    ⚠ admin access (1/1) — SKIPPED: 403 Forbidden
-
-  Result: 2/4 passed, 2 skipped, 2 auto-fixed
-  Archiving...           [done]
-  Committing...          [skipped] (auto-commit disabled)
-
-⚠ 2 tests skipped. See VERIFICATION.md for details.
-
-Checking for more requests...
-Queue empty. All done!
-
-Summary:
-  - REQ-013: 2/4 tests passed, 2 skipped (not committed)
-
-💡 Changes are ready. Run `git add . && git commit` when ready to commit.
-```
-
-## Error Handling
-
-### Implementation fails
-- Mark REQ as `failed`
-- Move to archive with error
-- Continue to next request
-
-### All tests skipped
-- Mark REQ as `completed` with warning
-- Note in VERIFICATION.md: "All tests skipped — manual verification recommended"
-
-### Playwright not installed
-```
-Playwright not found. Installing...
-npm init playwright@latest --yes
-```
-
-### Test file syntax error
-- Fix the generated test file
-- Rerun
-
-## Test Script Template
-
-Full template for generated tests:
-
-```javascript
-// tests/pp/REQ-{id}-{slug}.spec.js
-const { test, expect } = require('@playwright/test');
-
-// Test configuration
-const config = {
-  loginUrl: '{loginUrl}',
-  username: '{username}',
-  password: '{password}',
-  baseUrl: '{baseUrl}',
-  testUrl: '{testUrl}'
-};
-
-test.describe('REQ-{id}: {title}', () => {
-
-  // Setup: Login before each test
-  test.beforeEach(async ({ page }) => {
-    // Navigate to login
-    await page.goto(config.loginUrl);
-
-    // Fill credentials (try multiple selectors for compatibility)
-    const usernameSelectors = '[name="username"], [name="email"], #username, #email, input[type="email"]';
-    const passwordSelectors = '[name="password"], #password, input[type="password"]';
-
-    await page.locator(usernameSelectors).first().fill(config.username);
-    await page.locator(passwordSelectors).first().fill(config.password);
-
-    // Submit
-    await page.locator('button[type="submit"], input[type="submit"], .login-btn, #login-btn').first().click();
-
-    // Wait for redirect away from login
-    await page.waitForURL(url => !url.pathname.includes('login'), { timeout: 10000 });
-
-    // Navigate to test URL
-    await page.goto(config.testUrl);
-    await page.waitForLoadState('networkidle');
-  });
-
-  /*
-   * Generated tests based on "Done When" criteria:
-   * {done_when_criteria}
-   */
-
-  test('{criterion_1}', async ({ page }) => {
-    {test_code_1}
-  });
-
-  test('{criterion_2}', async ({ page }) => {
-    {test_code_2}
-  });
-
-  // ... more tests
-
-});
-```
-
-## Skipped Test Documentation
-
-When a test is skipped, the VERIFICATION.md includes:
-
-**For max attempts (10 failures):**
-```markdown
-### {test_name}
-- **Reason:** Failed 10 consecutive times
-- **Skip type:** `max_attempts`
-- **Last error:** `{error_message}`
-- **Fix attempts made:**
-  1. {fix_1} — still failed
-  2. {fix_2} — still failed
-  ...
-- **Recommendation:** Manual investigation needed — {brief analysis}
-```
-
-**For infrastructure issues:**
-```markdown
-### {test_name}
-- **Reason:** Infrastructure/permission issue
-- **Skip type:** `infra_{subtype}`
-- **Error:** `{error_message}`
-- **Why skipped:** Cannot fix with code — {explanation}
-- **Recommendation:** {what to check/fix on server side}
-```
-
-**Skip subtypes:**
-- `infra_permission` — 403, 401
-- `infra_connection` — Connection refused, DNS failed
-- `infra_security` — CORS, SSL/TLS errors
-- `infra_playwright` — Browser crash, Playwright limitation
-
-## State Management
-
-Update `pp/STATE.md` at each step transition for resume capability.
-
-### When to Update State
-
-| Event | Update |
-|-------|--------|
-| Claim task | `status: working`, `step: claim`, task details |
-| Start research | `step: research` |
-| Research done | `step: implement`, research file |
-| Implementation done | `step: test` |
-| Each test attempt | `step_detail` with attempt #, error |
-| Test skipped | Add to skipped list |
-| Test passed | Update counts |
-| Task complete | `status: idle`, add to completions |
-
-### State File Updates
-
-**On claim (Step 2):**
-```markdown
-## Current Position
-
-**Status:** working
-**Queue:** [N] pending
-**Working on:** REQ-XXX-slug
-**Step:** claim
-**Last activity:** [timestamp]
-
-## In Progress
-
-| Field | Value |
-|-------|-------|
-| REQ | REQ-XXX-slug |
-| Step | claim |
-| Started | [timestamp] |
-```
-
-**On test loop (Step 7):**
-```markdown
-## In Progress
-
-| Field | Value |
-|-------|-------|
-| REQ | REQ-XXX-slug |
-| Step | testing |
-| Test file | tests/pp/REQ-XXX.spec.js |
-| Tests total | 5 |
-| Tests passed | 3 |
-| Tests skipped | 1 |
-| Current test | reconnection handling |
-| Attempt | 4/10 |
-| Last error | Token refresh failing |
-```
-
-**On completion (Step 9):**
-```markdown
-## Current Position
-
-**Status:** idle
-**Queue:** [N-1] pending
-**Working on:** None
-**Last activity:** [timestamp]
-
-## Recent Completions
-
-| REQ | Title | Tests | Result | Commit | Date |
-|-----|-------|-------|--------|--------|------|
-| REQ-XXX | [title] | 4/5 | ⚠ Partial | abc123 | [date] |
-| ... previous ... |
-```
-
-### Reading State for Resume
-
-When `/pp resume` is called:
-
-1. Read `pp/STATE.md`
-2. Parse "In Progress" section
-3. Restore:
-   - Current REQ file path
-   - Current step
-   - Test attempt counters
-   - Skipped tests list
-   - Last error context
-4. Continue from saved step
-
-See [status action](./status.md) for full resume logic.
+---
 
 ## Checkpoints (Session Mode Dependent)
 
-Checkpoints pause execution to get user confirmation. Behavior depends on session mode.
+**Normal mode:** Pause at decision points, ask user
+**Overnight mode:** Auto-select recommended option, log decision
 
-### Session Mode
+Checkpoint triggers:
+- Multiple valid approaches (use research recommendation)
+- Destructive actions (SKIP in overnight mode)
+- External side effects (SKIP in overnight mode)
 
-At first `/pp status` command in a session, user selects:
-- **Normal** — Pause at checkpoints
-- **Overnight** — Auto-select, no pauses
-
-Mode is stored in memory for the session (not persisted).
-
-### Checkpoint Triggers
-
-| Trigger | Example | When to Checkpoint |
-|---------|---------|-------------------|
-| Multiple approaches | Socket.io vs Native WS | Research found alternatives |
-| Destructive action | Delete files, drop table | Irreversible changes |
-| External side effect | Push to remote, send email | Leaves the local system |
-| Research conflict | Docs say X, code uses Y | Unclear which to follow |
-| Large scope | 10+ files affected | Big blast radius |
-| Security sensitive | Auth, encryption, tokens | Needs careful review |
-
-### Normal Mode — Checkpoint Flow
-
-```
-Implementing REQ-015...
-  Created WebSocket handler...
-
-  ╔══════════════════════════════════════════════════════════════╗
-  ║  CHECKPOINT: Architecture Decision                           ║
-  ╚══════════════════════════════════════════════════════════════╝
-
-  Research found 2 valid approaches:
-
-  A) Socket.io (recommended)
-     - Auto-reconnect, fallbacks, larger ecosystem
-     - Bundle: +45KB
-
-  B) Native WebSocket
-     - Smaller bundle, manual reconnect logic
-     - Bundle: +2KB
-
-  Research recommends: A (Socket.io)
-
-  ──────────────────────────────────────────────────────────────
-  → Select approach: A / B
-  ──────────────────────────────────────────────────────────────
-
-User: A
-
-  ✓ Decision: Socket.io
-  Continuing implementation...
-```
-
-### Overnight Mode — Auto-Select
-
-```
-Implementing REQ-015...
-  Created WebSocket handler...
-
-  Decision: Socket.io vs Native WebSocket
-  ⚡ Auto-selected: Socket.io (research recommended)
-
-  Continuing implementation...
-```
-
-### Logging Decisions
-
-All checkpoint decisions (user or auto) are logged to STATE.md:
-
-```markdown
-## Decisions Made This Session
-
-| Time | REQ | Decision | Choice | Mode |
-|------|-----|----------|--------|------|
-| 14:30 | REQ-015 | WebSocket library | Socket.io | Auto (overnight) |
-| 14:45 | REQ-015 | Auth refresh | On reconnect | Auto (overnight) |
-| 15:00 | REQ-016 | Delete old files | Confirmed | User (normal) |
-```
-
-### Checkpoint Types
-
-**Decision checkpoint:**
-```
-╔══════════════════════════════════════════════════════════════╗
-║  CHECKPOINT: [Decision Type]                                  ║
-╚══════════════════════════════════════════════════════════════╝
-
-[Context and options]
-
-Recommended: [option]
-
-→ Select: A / B / C
-```
-
-**Confirmation checkpoint:**
-```
-╔══════════════════════════════════════════════════════════════╗
-║  CHECKPOINT: Confirm Action                                   ║
-╚══════════════════════════════════════════════════════════════╝
-
-About to: [destructive/external action]
-Affects: [what will change]
-
-→ Proceed? (yes/no)
-```
-
-**Review checkpoint:**
-```
-╔══════════════════════════════════════════════════════════════╗
-║  CHECKPOINT: Review Required                                  ║
-╚══════════════════════════════════════════════════════════════╝
-
-[What needs review]
-
-→ Type "approved" to continue, or describe issues
-```
-
-### Overnight Mode Defaults
-
-When auto-selecting in overnight mode:
-
-| Checkpoint Type | Auto-Select Rule |
-|-----------------|------------------|
-| Multiple approaches | Use research recommendation |
-| Destructive action | Skip (don't auto-delete) |
-| External side effect | Skip (don't auto-push) |
-| Research conflict | Use research recommendation |
-| Large scope | Proceed (already planned) |
-| Security sensitive | Use research recommendation |
-
-**Critical:** Destructive and external actions are SKIPPED in overnight mode, not auto-confirmed. They're logged as "Skipped (overnight mode)" and can be done manually later.
+Log all decisions to STATE.md.
