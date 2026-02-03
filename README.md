@@ -15,37 +15,38 @@ A powerful task management skill for Claude Code with smart questioning, auto-re
 
 ## Installation
 
-### Option 1: Git Clone (Recommended)
+### Option 1: One-liner (Recommended)
 
 ```bash
-mkdir -p ~/.claude/skills
-cd ~/.claude/skills
-git clone https://github.com/PraneethPittu/power-pack.git pp
+mkdir -p ~/.claude/skills && git clone https://github.com/PraneethPittu/power-pack.git ~/.claude/skills/pp && ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
 ```
 
-### Option 2: Download ZIP
+### Option 2: Step by step
 
 ```bash
+# 1. Clone the repo
 mkdir -p ~/.claude/skills
-cd ~/.claude/skills
-unzip power-pack.zip
+git clone https://github.com/PraneethPittu/power-pack.git ~/.claude/skills/pp
+
+# 2. Link commands to Claude Code (REQUIRED)
+ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
 ```
 
-### Option 3: Direct Copy
+### Option 3: Using degit (no git history)
 
 ```bash
-mkdir -p ~/.claude/skills
-cp -r /path/to/pp ~/.claude/skills/
+npx degit PraneethPittu/power-pack ~/.claude/skills/pp
+ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
 ```
 
 ### Verify Installation
 
 ```bash
-ls ~/.claude/skills/pp/
-# Should show: SKILL.md, README.md, actions/
+ls ~/.claude/commands/pp/
+# Should show: add.md, work.md, status.md, help.md, mode.md, resume.md
 ```
 
-**Important:** Restart Claude Code after installation to detect the new skill.
+**Important:** Restart Claude Code after installation to detect the new commands.
 
 ---
 
@@ -56,7 +57,7 @@ ls ~/.claude/skills/pp/
 Run any `/pp` command in your project:
 
 ```
-/pp status
+/pp:status
 ```
 
 You'll be asked three questions (once per session):
@@ -87,7 +88,7 @@ If you choose "No" for testing, the skill skips test credentials setup, test gen
 ### 2. Capture a task
 
 ```
-/pp add add a logout button to the header
+/pp:add add a logout button to the header
 ```
 
 **If Playwright testing is enabled**, you'll first be asked for test credentials (once per project):
@@ -108,7 +109,7 @@ This creates `pp/config/test-env.json` (gitignored). If you choose "No login yet
 ### 4. Process the queue
 
 ```
-/pp work
+/pp:work
 ```
 
 The skill will:
@@ -127,38 +128,38 @@ The skill will:
 | Command | Description |
 |---------|-------------|
 | `/pp` | Show status (default) |
-| `/pp help` | Show help with all commands and detailed usage |
-| `/pp add <description>` | Capture a new task with smart questioning |
-| `/pp work` | Process all pending tasks in the queue |
-| `/pp resume` | Continue from where you left off (after context reset) |
-| `/pp status` | Show current state, queue, and recent completions |
-| `/pp mode normal` | Switch to normal mode (pauses at checkpoints) |
-| `/pp mode overnight` | Switch to overnight mode (runs autonomously) |
+| `/pp:help` | Show help with all commands and detailed usage |
+| `/pp:add <description>` | Capture a new task with smart questioning |
+| `/pp:work` | Process all pending tasks in the queue |
+| `/pp:resume` | Continue from where you left off (after context reset) |
+| `/pp:status` | Show current state, queue, and recent completions |
+| `/pp:mode normal` | Switch to normal mode (pauses at checkpoints) |
+| `/pp:mode overnight` | Switch to overnight mode (runs autonomously) |
 
 ---
 
 ## Detailed Command Guide
 
-### `/pp help`
+### `/pp:help`
 
 Shows help documentation with all available commands and their usage.
 
 ```
-/pp help
+/pp:help
 ```
 
 **Output:** Displays the full command reference, workflow overview, and troubleshooting tips.
 
 ---
 
-### `/pp add <description>`
+### `/pp:add <description>`
 
 Captures a new task and adds it to the queue. Uses collaborative questioning to understand your intent before creating the request.
 
 ```
-/pp add make the dashboard faster
-/pp add add dark mode toggle to settings
-/pp add fix login bug when password has special characters
+/pp:add make the dashboard faster
+/pp:add add dark mode toggle to settings
+/pp:add fix login bug when password has special characters
 ```
 
 **What happens:**
@@ -176,17 +177,17 @@ Captures a new task and adds it to the queue. Uses collaborative questioning to 
 
 **Skip questions:** Add "just capture it" to skip questioning:
 ```
-/pp add add dark mode, just capture it
+/pp:add add dark mode, just capture it
 ```
 
 ---
 
-### `/pp work`
+### `/pp:work`
 
 Processes all pending tasks in the queue. This is the main execution command.
 
 ```
-/pp work
+/pp:work
 ```
 
 **What happens for each task:**
@@ -210,7 +211,7 @@ Processes all pending tasks in the queue. This is the main execution command.
 
 ---
 
-### `/pp resume`
+### `/pp:resume`
 
 Continues work from where you left off. Use this after:
 - Closing the terminal
@@ -218,7 +219,7 @@ Continues work from where you left off. Use this after:
 - Switching to another project and coming back
 
 ```
-/pp resume
+/pp:resume
 ```
 
 **What it restores:**
@@ -232,12 +233,12 @@ Continues work from where you left off. Use this after:
 
 ---
 
-### `/pp status`
+### `/pp:status`
 
 Shows the current state of your pp queue.
 
 ```
-/pp status
+/pp:status
 ```
 
 **Output includes:**
@@ -263,18 +264,18 @@ Pending queue: 2 tasks
   - REQ-016: Add dark mode
   - REQ-017: Export to PDF
 
-Run `/pp resume` to continue.
+Run `/pp:resume` to continue.
 ```
 
 ---
 
-### `/pp mode <normal|overnight>`
+### `/pp:mode <normal|overnight>`
 
 Switches the session mode mid-session.
 
 ```
-/pp mode normal      # Switch to normal mode
-/pp mode overnight   # Switch to overnight mode
+/pp:mode normal      # Switch to normal mode
+/pp:mode overnight   # Switch to overnight mode
 ```
 
 **Normal mode:**
@@ -294,7 +295,7 @@ Switches the session mode mid-session.
 
 ## Folder Structure
 
-When you use `/pp add` and `/pp work`, it creates the following folders in your project:
+When you use `/pp:add` and `/pp:work`, it creates the following folders in your project:
 
 ```
 your-project/
@@ -354,7 +355,7 @@ your-project/
 Instead of guessing what you want, pp asks clarifying questions:
 
 ```
-You: /pp add make the dashboard faster
+You: /pp:add make the dashboard faster
 
 pp: What's slow about the dashboard?
   - Initial load time
@@ -446,7 +447,7 @@ Work is saved to `pp/STATE.md`. If you:
 
 Just come back and run:
 ```
-/pp resume
+/pp:resume
 ```
 
 It continues exactly where you left off, including:
@@ -461,7 +462,7 @@ It continues exactly where you left off, including:
 
 ### Test Environment
 
-Test credentials are asked **once during your first `/pp add`** (when Playwright is enabled and config doesn't exist), then reused for all tasks.
+Test credentials are asked **once during your first `/pp:add`** (when Playwright is enabled and config doesn't exist), then reused for all tasks.
 
 ```json
 // pp/config/test-env.json (auto-generated, gitignored)
@@ -496,8 +497,8 @@ These are asked at session start (not persisted):
 
 To change mode mid-session:
 ```
-/pp mode overnight
-/pp mode normal
+/pp:mode overnight
+/pp:mode normal
 ```
 
 **Note:** Playwright testing preference is set once at session start and cannot be changed mid-session.
@@ -557,7 +558,7 @@ Fix the code → Retry
 ### If something goes wrong:
 
 1. **Check STATE.md** — See current position and any blockers
-2. **Run `/pp status`** — Get a summary of what's happening
+2. **Run `/pp:status`** — Get a summary of what's happening
 3. **Clear state if stuck**: `rm pp/STATE.md`
 
 ---
@@ -570,10 +571,10 @@ npm init playwright@latest
 ```
 
 ### "Test credentials missing"
-Run `/pp add <any task>` — it will prompt for credentials before capturing if Playwright testing is enabled.
+Run `/pp:add <any task>` — it will prompt for credentials before capturing if Playwright testing is enabled.
 
 ### "Session mode not set"
-Run `/pp status` to trigger the first-time setup.
+Run `/pp:status` to trigger the first-time setup.
 
 ### Tests keep failing the same way
 Check if it's an infrastructure issue (403, 401, CORS). These need manual server-side fixes.
