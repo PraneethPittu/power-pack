@@ -19,21 +19,21 @@ Even detailed/long requests (500+ words) still need questions about:
 
 ---
 
-## Test Environment (Mandatory - BLOCKING)
+## Test Environment (Once Per Session)
 
-**STOP! Before capturing ANY task, you MUST check test environment.**
-
-This is a BLOCKER — do not proceed to questioning or capture until resolved.
-
-### First-Time Setup
-
-**Step 1: Check if config exists:**
+**Check if `pp/config/test-env.json` exists:**
 
 ```bash
 cat pp/config/test-env.json 2>/dev/null
 ```
 
-**If config doesn't exist**, ask these mandatory questions:
+### If Config EXISTS → Use It (Don't Ask Again)
+
+Simply proceed to capture. The existing config will be used for all tasks.
+
+**Optionally mention:** "Using saved test environment. Say 'change test config' if you need different credentials for this task."
+
+### If Config DOESN'T EXIST → Ask Once
 
 ```
 [AskUserQuestion]
@@ -107,21 +107,45 @@ Write `pp/config/test-env.json`:
 echo "pp/config/test-env.json" >> .gitignore
 ```
 
-### Per-Task Test URL
+### User Wants to Change Config for a Task
 
-For each task, also ask:
+If user says "change test config", "different credentials", "use different env", etc.:
+
+```
+[AskUserQuestion]
+header: "Config Change"
+question: "How do you want to update the test config?"
+options:
+- "Update for this task only" — Temporary override, won't save
+- "Update permanently" — Replace saved config
+- "Never mind" — Keep using existing config
+```
+
+**If "this task only":** Store override in REQ file's frontmatter:
+```yaml
+test_override:
+  loginUrl: "https://staging.example.com/login"
+  username: "staging_user"
+```
+
+**If "permanently":** Update `pp/config/test-env.json` with new values.
+
+### Per-Task Test URL (Optional)
+
+During capture, you may ask which page to test if it's not obvious from the request:
 
 ```
 [AskUserQuestion]
 header: "Test URL"
-question: "What URL should we test this feature on?"
+question: "What page should we test this feature on?"
 options:
-- "[baseUrl]/dashboard" — Dashboard page
-- "[baseUrl]/settings" — Settings page
+- "Dashboard" — [baseUrl]/dashboard
+- "Settings" — [baseUrl]/settings
 - "Let me specify" — Different URL
+- "Figure it out" — Decide during implementation
 ```
 
-Store in the REQ file's `test_url` frontmatter field.
+Store in REQ file's `test_url` frontmatter. If not specified, the work phase will determine it.
 
 ---
 
