@@ -30,6 +30,10 @@ options:
 | **Normal** | Pause at checkpoints, ask for confirmation |
 | **Overnight** | Auto-select recommended options, log decisions |
 
+**IMPORTANT: Overnight mode only affects the WORK phase (implementation checkpoints).**
+
+Capture (`/pp add`) **always asks clarifying questions** regardless of mode, unless user says "just capture it".
+
 ### Question 2: Auto-Commit
 
 ```

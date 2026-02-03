@@ -2,13 +2,32 @@
 
 > **Part of the power-pack skill.** Captures tasks with collaborative questioning — understand intent before creating requests.
 
-## Test Environment (Mandatory)
+## IMPORTANT: Overnight Mode Does NOT Skip Capture Questions
 
-Before capturing any task, ensure test environment is configured. This is required for automated Playwright testing.
+**Overnight mode only affects the WORK phase** (auto-selects at checkpoints during implementation).
+
+During capture, **ALWAYS ask clarifying questions** regardless of session mode, unless:
+- User explicitly says "just capture it" or "figure it out"
+- Request is extremely specific with clear success criteria (rare)
+
+Even detailed/long requests (500+ words) still need questions about:
+- Success criteria: "How will you know it's working?"
+- Priority: "Which part matters most?"
+- Scope boundaries: "Should this include X or just Y?"
+
+**The length of a request does NOT equal clarity.**
+
+---
+
+## Test Environment (Mandatory - BLOCKING)
+
+**STOP! Before capturing ANY task, you MUST check test environment.**
+
+This is a BLOCKER — do not proceed to questioning or capture until resolved.
 
 ### First-Time Setup
 
-Check if `pp/config/test-env.json` exists:
+**Step 1: Check if config exists:**
 
 ```bash
 cat pp/config/test-env.json 2>/dev/null
@@ -132,10 +151,19 @@ The user often has a fuzzy idea. Your job is to help them sharpen it. Ask questi
 
 ### DON'T ASK when:
 
-- The request is specific and actionable ("add a logout button to the header that redirects to /login")
+- The request is **truly specific AND has clear success criteria** ("add a logout button to the header that redirects to /login" — we know exactly what "done" looks like)
 - Technical implementation is unclear (that's for the builder)
 - You're just curious (capture what they said)
 - User explicitly says "just capture it" or "figure it out"
+
+**WARNING: Long/detailed requests are NOT automatically "specific and actionable"**
+
+A 500-word request might describe WHAT they want in detail but still lack:
+- Success criteria (how will we test it?)
+- Priority (which feature first?)
+- Scope boundaries (what's included vs excluded?)
+
+**When in doubt, ask at least ONE question about success criteria.**
 
 ## Question Types
 
