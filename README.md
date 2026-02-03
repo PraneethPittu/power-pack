@@ -18,23 +18,26 @@ A powerful task management skill for Claude Code with smart questioning, auto-re
 ### Option 1: One-liner (Recommended)
 
 ```bash
-mkdir -p ~/.claude/skills && git clone https://github.com/PraneethPittu/power-pack.git ~/.claude/skills/pp && ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
+mkdir -p ~/.claude/skills ~/.claude/commands && git clone https://github.com/PraneethPittu/power-pack.git ~/.claude/skills/pp && ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
 ```
 
 ### Option 2: Step by step
 
 ```bash
-# 1. Clone the repo
-mkdir -p ~/.claude/skills
+# 1. Create directories
+mkdir -p ~/.claude/skills ~/.claude/commands
+
+# 2. Clone the repo
 git clone https://github.com/PraneethPittu/power-pack.git ~/.claude/skills/pp
 
-# 2. Link commands to Claude Code (REQUIRED)
+# 3. Link commands to Claude Code (REQUIRED)
 ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
 ```
 
 ### Option 3: Using degit (no git history)
 
 ```bash
+mkdir -p ~/.claude/skills ~/.claude/commands
 npx degit PraneethPittu/power-pack ~/.claude/skills/pp
 ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
 ```
