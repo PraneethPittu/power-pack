@@ -21,7 +21,11 @@ Even detailed/long requests (500+ words) still need questions about:
 
 ## Test Environment (Once Per Session)
 
-**Check if `pp/config/test-env.json` exists:**
+**First, check session preference:** If user selected "No" for Playwright testing during session setup, skip this entire section and proceed directly to capture.
+
+---
+
+**If Playwright testing is enabled**, check if `pp/config/test-env.json` exists:
 
 ```bash
 cat pp/config/test-env.json 2>/dev/null

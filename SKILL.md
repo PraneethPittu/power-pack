@@ -12,7 +12,7 @@ A powerful task management system that combines quick capture with deep understa
 
 ## Session Setup (First-Time Prompt)
 
-On the **first `/pp` command** in a new session, ask TWO questions:
+On the **first `/pp` command** in a new session, ask THREE questions:
 
 ### Question 1: Session Mode
 
@@ -50,7 +50,28 @@ options:
 | **Yes** | Git commit after each task completes (Step 12) |
 | **No** | Skip commit step — user commits manually |
 
-**Store both in memory** for this session (not persisted to disk).
+### Question 3: Playwright Testing
+
+```
+[AskUserQuestion]
+header: "Auto-testing"
+question: "Do you want automated Playwright tests for this session?"
+options:
+- "Yes" — Generate and run Playwright tests for each task
+- "No" — Skip automated testing, I'll test manually
+```
+
+| Setting | Behavior |
+|---------|----------|
+| **Yes** | Generate Playwright tests, run fix-retry loop (Steps 8-9) |
+| **No** | Skip test generation, skip test credentials prompt, no VERIFICATION.md |
+
+**If "No":**
+- Don't ask for test environment credentials
+- Skip Steps 8-9 (Generate Tests, Test Loop) during `/pp work`
+- Skip VERIFICATION.md generation
+
+**Store all three in memory** for this session (not persisted to disk).
 
 **This is asked once per Claude session.** Subsequent `/pp` commands use the stored preferences.
 

@@ -59,7 +59,7 @@ Run any `/pp` command in your project:
 /pp status
 ```
 
-You'll be asked two questions (once per session):
+You'll be asked three questions (once per session):
 
 **Session Mode:**
 ```
@@ -70,10 +70,19 @@ How will you be using this session?
 
 **Auto-commit:**
 ```
-Do you want to auto-commit changes in this session?
+Do you want to auto-commit changes after each task?
 - "Yes" — Commit after each task automatically
 - "No" — I'll commit manually
 ```
+
+**Playwright Testing:**
+```
+Do you want automated Playwright tests for this session?
+- "Yes" — Generate and run tests for each task
+- "No" — Skip automated testing, I'll test manually
+```
+
+If you choose "No" for testing, the skill skips test credentials setup, test generation, and the fix-retry loop.
 
 ### 2. Capture a task
 
@@ -486,12 +495,15 @@ How do you want to update the test config?
 These are asked at session start (not persisted):
 - **Session mode**: Normal / Overnight
 - **Auto-commit**: Yes / No
+- **Playwright testing**: Yes / No
 
-To change mid-session:
+To change mode mid-session:
 ```
 /pp mode overnight
 /pp mode normal
 ```
+
+**Note:** Playwright testing preference is set once at session start and cannot be changed mid-session.
 
 ---
 
