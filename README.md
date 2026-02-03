@@ -15,13 +15,28 @@ A powerful task management skill for Claude Code with smart questioning, auto-re
 
 ## Installation
 
-### Option 1: One-liner (Recommended)
+### Option 1: Install Script (Recommended)
+
+Works for fresh installs AND updates:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/PraneethPittu/power-pack/main/install.sh | bash
+```
+
+Or download and run:
+```bash
+wget https://raw.githubusercontent.com/PraneethPittu/power-pack/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+### Option 2: One-liner
 
 ```bash
 mkdir -p ~/.claude/skills ~/.claude/commands && git clone https://github.com/PraneethPittu/power-pack.git ~/.claude/skills/pp && ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
 ```
 
-### Option 2: Step by step
+### Option 3: Step by step
 
 ```bash
 # 1. Create directories
@@ -34,7 +49,7 @@ git clone https://github.com/PraneethPittu/power-pack.git ~/.claude/skills/pp
 ln -sf ~/.claude/skills/pp/commands ~/.claude/commands/pp
 ```
 
-### Option 3: Using degit (no git history)
+### Option 4: Using degit (no git history)
 
 ```bash
 mkdir -p ~/.claude/skills ~/.claude/commands
