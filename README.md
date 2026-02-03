@@ -90,14 +90,7 @@ If you choose "No" for testing, the skill skips test credentials setup, test gen
 /pp add add a logout button to the header
 ```
 
-The skill will ask clarifying questions:
-- Where exactly in the header?
-- What should happen on click?
-- How will you know it's working?
-
-### 3. Set up test environment (first time only)
-
-You'll be asked for test credentials:
+**If Playwright testing is enabled**, you'll first be asked for test credentials (once per project):
 ```
 Do you have a .env file with test credentials?
 - "Yes, I have .env" → Provide path
@@ -105,9 +98,12 @@ Do you have a .env file with test credentials?
 - "No login yet" → Skip for now (new project or no auth yet)
 ```
 
-This creates `pp/config/test-env.json` (gitignored).
+This creates `pp/config/test-env.json` (gitignored). If you choose "No login yet", Playwright tests will be skipped until you configure credentials later.
 
-**Note:** If you choose "No login yet", Playwright tests will be skipped until you configure credentials later.
+**Then** the skill will ask clarifying questions about your task:
+- Where exactly in the header?
+- What should happen on click?
+- How will you know it's working?
 
 ### 4. Process the queue
 
@@ -166,10 +162,11 @@ Captures a new task and adds it to the queue. Uses collaborative questioning to 
 ```
 
 **What happens:**
-1. Analyzes your description for clarity
-2. Asks clarifying questions if needed (What? Why? How will you know it's done?)
-3. Creates a REQ file in `pp/` folder
-4. Reports what was captured
+1. **(First time only, if Playwright enabled)** Asks for test credentials if `pp/config/test-env.json` doesn't exist
+2. Analyzes your description for clarity
+3. Asks clarifying questions if needed (What? Why? How will you know it's done?)
+4. Creates a REQ file in `pp/` folder
+5. Reports what was captured
 
 **Question types it may ask:**
 - **Motivation:** "What prompted this?" / "What problem are you solving?"
@@ -464,7 +461,7 @@ It continues exactly where you left off, including:
 
 ### Test Environment
 
-Test credentials are asked **once** when config doesn't exist, then reused for all tasks.
+Test credentials are asked **once during your first `/pp add`** (when Playwright is enabled and config doesn't exist), then reused for all tasks.
 
 ```json
 // pp/config/test-env.json (auto-generated, gitignored)
@@ -573,7 +570,7 @@ npm init playwright@latest
 ```
 
 ### "Test credentials missing"
-Run `/pp work` again — it will prompt for credentials.
+Run `/pp add <any task>` — it will prompt for credentials before capturing if Playwright testing is enabled.
 
 ### "Session mode not set"
 Run `/pp status` to trigger the first-time setup.
