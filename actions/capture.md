@@ -2,6 +2,36 @@
 
 > **Part of the power-pack skill.** Captures tasks with collaborative questioning — understand intent before creating requests.
 
+## CRITICAL: Capture Does NOT Implement
+
+**This action ONLY captures tasks. It does NOT implement them.**
+
+**NEVER do any of the following during capture:**
+- Write code
+- Create project files
+- Install dependencies
+- Run commands (except mkdir for pp/ folder)
+- Explore codebase for implementation
+- Start building features
+
+**ONLY do these during capture:**
+- Ask clarifying questions
+- Create `pp/REQ-*.md` files
+- Create `pp/user-requests/UR-*/` folders
+- Set up test config (if first time)
+- Update `pp/STATE.md`
+
+**After capture is complete, tell the user:**
+```
+Captured: [task summary]
+
+Ready to implement? Run `/pp work`
+```
+
+**DO NOT automatically start implementation. Wait for `/pp work`.**
+
+---
+
 ## IMPORTANT: Overnight Mode Does NOT Skip Capture Questions
 
 **Overnight mode only affects the WORK phase** (auto-selects at checkpoints during implementation).

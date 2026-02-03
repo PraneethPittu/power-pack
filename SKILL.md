@@ -10,6 +10,26 @@ A powerful task management system that combines quick capture with deep understa
 
 **Core Philosophy:** Understand before building. Ask questions when uncertain. Verify goals were achieved.
 
+## CRITICAL: Capture vs Work Separation
+
+**`/pp add` and `/pp work` are SEPARATE actions. Do NOT combine them.**
+
+### `/pp add <task>` — Capture ONLY
+- Ask clarifying questions
+- Create REQ file(s)
+- **NEVER write code**
+- **NEVER implement anything**
+- End with: "Ready to implement? Run `/pp work`"
+
+### `/pp work` — Implementation ONLY
+- Follow the workflow in [work action](./actions/work.md) step by step
+- Move files through: `pp/` → `pp/working/` → `pp/archive/`
+- Generate tests, run test loop, create verification
+
+**NEVER implement during `/pp add`. NEVER skip file operations during `/pp work`.**
+
+---
+
 ## CRITICAL: Follow the Workflow
 
 **When `/pp work` is invoked, you MUST follow the workflow in [work action](./actions/work.md) step by step.**
