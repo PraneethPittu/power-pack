@@ -42,7 +42,21 @@ question: "I need test environment details for automated testing. Do you have a 
 options:
 - "Yes, I have .env" — I'll provide the path
 - "No .env file" — I'll provide credentials directly
+- "No login yet" — Skip for now, I'll set it up later or need Claude to create auth first
 ```
+
+**If user selects "No login yet":**
+- Skip test environment setup for now
+- Create a placeholder config:
+```json
+{
+  "status": "pending",
+  "reason": "No auth system yet",
+  "createdAt": "2026-02-03T10:00:00Z"
+}
+```
+- Note in the REQ file: "Test environment not configured - manual testing required or set up auth first"
+- During `/pp work`, skip Playwright test generation and show reminder: "No test credentials configured. Run `/pp add set up authentication` first or say 'change test config' to add credentials."
 
 **If user has .env:**
 ```

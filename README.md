@@ -93,9 +93,12 @@ You'll be asked for test credentials:
 Do you have a .env file with test credentials?
 - "Yes, I have .env" → Provide path
 - "No .env file" → Provide credentials directly
+- "No login yet" → Skip for now (new project or no auth yet)
 ```
 
 This creates `pp/config/test-env.json` (gitignored).
+
+**Note:** If you choose "No login yet", Playwright tests will be skipped until you configure credentials later.
 
 ### 4. Process the queue
 
