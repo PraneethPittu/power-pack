@@ -174,10 +174,18 @@ If input doesn't match a known command but has content:
 
 ## Action References
 
-- [help action](./actions/help.md) — Display help documentation
-- [capture action](./actions/capture.md) — Task capture with questioning
-- [work action](./actions/work.md) — Queue processing with verification
-- [status action](./actions/status.md) — Current state and next steps
+**IMPORTANT: You MUST read and follow the detailed instructions in the action file for the command being executed.**
+
+When routing to an action, READ THE FULL ACTION FILE before doing anything:
+
+| Command | Action File to READ |
+|---------|---------------------|
+| `/pp add` | **READ [capture action](./actions/capture.md) FIRST** |
+| `/pp work` | **READ [work action](./actions/work.md) FIRST** |
+| `/pp status` | **READ [status action](./actions/status.md) FIRST** |
+| `/pp help` | **READ [help action](./actions/help.md) FIRST** |
+
+**DO NOT improvise. DO NOT skip reading the action file. The action files contain step-by-step instructions that MUST be followed exactly.**
 
 ## Folder Structure
 
