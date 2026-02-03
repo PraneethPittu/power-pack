@@ -20,7 +20,7 @@ A powerful task management skill for Claude Code with smart questioning, auto-re
 ```bash
 mkdir -p ~/.claude/skills
 cd ~/.claude/skills
-git clone https://github.com/YOUR_USERNAME/pp-skill.git pp
+git clone https://github.com/PraneethPittu/power-pack.git pp
 ```
 
 ### Option 2: Download ZIP
@@ -28,7 +28,7 @@ git clone https://github.com/YOUR_USERNAME/pp-skill.git pp
 ```bash
 mkdir -p ~/.claude/skills
 cd ~/.claude/skills
-unzip pp-skill.zip
+unzip power-pack.zip
 ```
 
 ### Option 3: Direct Copy
