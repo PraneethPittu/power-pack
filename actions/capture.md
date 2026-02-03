@@ -32,6 +32,21 @@ Ready to implement? Run `/pp work`
 
 ---
 
+## MANDATORY CAPTURE CHECKLIST
+
+**Before capturing ANY task, complete this checklist in order:**
+
+- [ ] **Step 0:** If Playwright testing is enabled AND `pp/config/test-env.json` doesn't exist → Ask for test credentials FIRST
+- [ ] **Step 1:** Read and understand user's request
+- [ ] **Step 2:** Ask clarifying questions if needed
+- [ ] **Step 3:** Check for existing similar requests
+- [ ] **Step 4:** Assess complexity (simple vs complex)
+- [ ] **Step 5:** Create REQ file(s) and update STATE.md
+
+**DO NOT SKIP Step 0.** Test credentials must be collected before the first capture if Playwright testing is enabled.
+
+---
+
 ## IMPORTANT: Overnight Mode Does NOT Skip Capture Questions
 
 **Overnight mode only affects the WORK phase** (auto-selects at checkpoints during implementation).
@@ -341,6 +356,26 @@ AskUserQuestion:
 - **Technical probing** — Asking about implementation (that's for the builder)
 
 ## Workflow
+
+### Step 0: Test Environment Setup (CRITICAL - Do First)
+
+**If Playwright testing is enabled for this session AND `pp/config/test-env.json` does NOT exist, you MUST set up test credentials BEFORE capturing the task.**
+
+```bash
+# Check if config exists
+cat pp/config/test-env.json 2>/dev/null
+```
+
+**If the file does NOT exist and Playwright is enabled:**
+1. Go back to the "Test Environment (Once Per Session)" section above
+2. Ask the user for .env file path OR manual credentials
+3. Create `pp/config/test-env.json`
+4. Add to `.gitignore`
+5. THEN proceed to Step 1
+
+**If the file exists OR Playwright is disabled:** Proceed directly to Step 1.
+
+---
 
 ### Step 1: Read and Understand
 
