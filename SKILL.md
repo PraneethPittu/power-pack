@@ -68,20 +68,20 @@ cd ~/.claude/skills/pp && git fetch origin main 2>/dev/null && git rev-list HEAD
    - Read the local VERSION file: `cat ~/.claude/skills/pp/VERSION`
    - Read the remote VERSION: `git show origin/main:VERSION 2>/dev/null`
    - Read the remote CHANGELOG: `git show origin/main:CHANGELOG.md 2>/dev/null`
-   - Compare major versions (e.g., 1.x.x vs 2.x.x) to determine if restart is needed
+   - **Auto-pull the update:**
+   ```bash
+   cd ~/.claude/skills/pp && git pull origin main 2>/dev/null
+   ```
    - Display to the user:
    ```
-   pp update available! v[local] → v[remote]
+   pp updated! v[old] → v[new]
 
    What's new:
    [Show the latest changelog entry from remote CHANGELOG.md]
 
-   To update:
-   cd ~/.claude/skills/pp && git pull origin main
-
-   ⚠ Restart required: Start a new Claude Code session after updating to get all changes.
-   (Action files like capture.md and work.md update immediately, but session setup questions
-   and routing changes only take effect in a new session.)
+   ⚠ Restart your Claude Code session to get all changes.
+   (Action files update immediately, but session setup and routing
+   changes only take effect in a new session.)
    ```
    - Then continue with session setup as normal
 

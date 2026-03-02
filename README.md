@@ -68,16 +68,16 @@ ls ~/.claude/commands/pp/
 
 ### Updating
 
-pp checks for updates automatically when you start a new session. If an update is available, you'll see:
+pp auto-updates when you start a new session. If an update is pulled, you'll see:
 
 ```
-pp update available! v2.0.0 → v2.1.0
+pp updated! v2.0.0 → v2.1.0
 
 What's new:
 - Example improvement
 - ...
 
-To update: cd ~/.claude/skills/pp && git pull origin main
+⚠ Restart your Claude Code session to get all changes.
 ```
 
 Or update manually anytime:
