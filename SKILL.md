@@ -18,8 +18,8 @@ A powerful task management system that combines quick capture with deep understa
 - Rephrase prompt into optimized detailed version (using agent)
 - Save rephrased prompt to `pp/rephrased/`
 - Ask clarifying questions (ALWAYS — both Normal and Overnight modes)
-- Enter plan mode and create implementation plan (EVERY task)
-- Save plan to `pp/plans/`
+- Enter plan mode for medium/complex tasks (skip for simple single-line fixes and UI tweaks)
+- Save plan to `pp/plans/` (when planning is done)
 - Create REQ file(s) with references to rephrased prompt and plan
 - **NEVER write code**
 - **NEVER implement anything**

@@ -212,8 +212,8 @@ Captures a new task and adds it to the queue. Uses collaborative questioning to 
 1. **(First time only, if Playwright enabled)** Asks for test credentials if `pp/config/test-env.json` doesn't exist
 2. **Rephrases your prompt** into an optimized, detailed version using an agent (saved to `pp/rephrased/`)
 3. **Asks clarifying questions** (ALWAYS — both Normal and Overnight modes)
-4. **Enters plan mode** and creates a detailed implementation plan (EVERY task — saved to `pp/plans/`)
-5. Shows plan for review (based on session preference)
+4. **Assesses complexity** (simple / medium / complex)
+5. **Enters plan mode** for medium & complex tasks (skipped for simple tasks — saved to `pp/plans/`)
 6. Creates a REQ file in `pp/` folder with references to rephrased prompt and plan
 7. Reports what was captured
 

@@ -509,9 +509,11 @@ Before creating new files, check:
 - Multiple REQ files with cross-references
 - Batch constraints captured
 
-### Step 6: Plan the Task (MANDATORY — Every Task)
+### Step 6: Plan the Task (Medium & Complex Tasks Only)
 
-**CRITICAL: You MUST enter plan mode for EVERY task, no exceptions.**
+**Skip this step for simple tasks** (single-line fixes, small UI tweaks, typo fixes, color changes, text changes).
+
+**Enter plan mode for medium and complex tasks** (multi-file changes, new features, architecture decisions, integrations).
 
 This step uses Claude Code's plan mode to create a detailed implementation plan for the task. Plan mode is the best way to think through implementation before writing code.
 

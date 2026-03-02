@@ -174,9 +174,14 @@ If similar exists: Ask update or create new?
 </step>
 
 <step name="step6_plan">
-## Step 6: PLAN THE TASK (MANDATORY — EVERY TASK)
+## Step 6: PLAN THE TASK (Medium & Complex Only)
 
-**DO NOT SKIP THIS STEP. Every task gets a plan, no exceptions.**
+**Skip for simple tasks** (single-line fixes, small UI tweaks, typo fixes, color/text changes).
+**Enter plan mode for medium/complex tasks** (multi-file changes, new features, architecture decisions).
+
+Use complexity from Step 5 to decide:
+- **Simple** → Skip plan, go straight to Step 7
+- **Medium/Complex** → Plan mode required:
 
 ```bash
 mkdir -p pp/plans

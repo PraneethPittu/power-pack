@@ -2,11 +2,17 @@
 
 All notable changes to Power-Pack (pp) will be documented in this file.
 
+## [2.1.0] - 2026-03-02
+
+### Changed
+- **Smart Plan Mode** — Plan mode now only runs for medium & complex tasks. Simple tasks (single-line fixes, UI tweaks) skip planning for faster capture
+- **Auto-pull Updates** — Update check now auto-pulls instead of showing manual `git pull` instruction
+
 ## [2.0.0] - 2026-03-02
 
 ### Added
 - **Prompt Rephrasing** — Every task prompt is rephrased by an agent into an optimized, detailed prompt for maximum Claude Code output. Saved to `pp/rephrased/`
-- **Mandatory Plan Mode** — Every task enters plan mode during capture to create a thorough implementation plan. Saved to `pp/plans/`
+- **Plan Mode** — Medium and complex tasks enter plan mode during capture to create a thorough implementation plan. Saved to `pp/plans/`
 - **Plan Verification Option** — New 4th session question: choose to review plans before proceeding or auto-continue
 - **Zero-Tolerance Testing** — Functionality tests must reach 100% pass. No skipping code-fixable failures
 - **UI Screenshot Verification** — Takes screenshots during testing and reviews them for alignment, spacing, responsive, and visual issues. Loops until every screenshot is clean

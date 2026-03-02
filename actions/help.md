@@ -41,8 +41,8 @@ COMMAND DETAILS
     1. Rephrases your prompt (agent-powered)
     2. Shows rephrased version for approval
     3. Asks clarifying questions (ALWAYS, both modes)
-    4. Enters plan mode (MANDATORY for every task)
-    5. Saves plan to pp/plans/
+    4. Assesses complexity (simple / medium / complex)
+    5. Enters plan mode (medium & complex only — skipped for simple tasks)
     6. Creates REQ file with all references
 
   Examples:
@@ -50,7 +50,7 @@ COMMAND DETAILS
     /pp add make the dashboard load faster
     /pp add fix login bug with special characters
 
-  Note: Questions and planning are ALWAYS performed — cannot be skipped.
+  Note: Questions are ALWAYS asked. Planning is for medium/complex tasks only.
 
 /pp work
   Processes all pending tasks. For each task:

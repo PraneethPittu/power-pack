@@ -32,8 +32,8 @@ COMMAND DETAILS
   Captures a task with the full capture pipeline:
     1. Rephrases your prompt into an optimized detailed version (agent)
     2. Asks clarifying questions (ALWAYS — both Normal and Overnight modes)
-    3. Enters plan mode to create implementation plan (EVERY task)
-    4. Shows plan for review (based on session preference)
+    3. Assesses complexity (simple / medium / complex)
+    4. Enters plan mode (medium & complex only — skipped for simple tasks)
     5. Creates REQ file with rephrased prompt + plan references
 
   Examples:
