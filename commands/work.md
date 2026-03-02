@@ -155,17 +155,26 @@ mkdir -p tests/pp tests/pp/screenshots
 
 **SKIP if Playwright testing disabled.**
 
-**ZERO TOLERANCE: Every test must pass. Only infrastructure failures (403, 401, CORS) can be skipped.**
+**ZERO TOLERANCE on code errors. Infrastructure errors can be skipped.**
 
 ```
+test_attempts = {}
+max_attempts = 10
+
 WHILE non-passed tests remain:
   1. Run: npx playwright test tests/pp/REQ-XXX-*.spec.js --reporter=list
   2. IF all pass → Proceed to Step 9b (screenshot review)
   3. FOR each failed test:
-     - Infrastructure error (403, 401, CORS) → SKIP (only valid skip reason)
-     - Code error → MUST FIX, retry
-     - If stuck after 5 attempts → try completely different approach
-  4. RERUN
+     - Infrastructure error (403, 401, CORS, connection refused, SSL)
+       → SKIP immediately (server-side issue, can't fix with code)
+       → Report in VERIFICATION.md
+     - Playwright crash (browser closed, target closed)
+       → Fix test setup, retry (count as attempt)
+     - Code error (500, assertion failed, element not found)
+       → MUST FIX, increment attempt counter
+       → If attempts >= 10 → SKIP, report as "needs manual investigation"
+       → If stuck after 5 attempts → try completely different approach
+  4. RERUN all non-skipped tests
 ```
 
 Update STATE.md after each iteration.

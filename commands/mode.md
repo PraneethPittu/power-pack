@@ -67,4 +67,7 @@ Session mode changed to [Normal/Overnight].
 - Logs all decisions to STATE.md
 - Best for large queues when you'll be away
 
+**Note:** Capture (`/pp:add`) ALWAYS asks clarifying questions regardless of mode.
+Overnight mode only affects the WORK phase (implementation checkpoints).
+
 </modes>

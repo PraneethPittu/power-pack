@@ -18,7 +18,7 @@ When user runs `/pp help`, display the following:
 
 ```
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                            POWER-PACK HELP                                   ║
+║                            POWER-PACK HELP v2.0                            ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
 A powerful task management skill combining do-work speed with GSD intelligence.
@@ -37,34 +37,43 @@ COMMAND DETAILS
 ────────────────────────────────────────────────────────────────────────────────
 
 /pp add <description>
-  Captures a task and adds it to the queue. Asks clarifying questions to
-  understand your intent before creating the request.
+  Captures a task and adds it to the queue. For every task:
+    1. Rephrases your prompt (agent-powered)
+    2. Shows rephrased version for approval
+    3. Asks clarifying questions (ALWAYS, both modes)
+    4. Enters plan mode (MANDATORY for every task)
+    5. Saves plan to pp/plans/
+    6. Creates REQ file with all references
 
   Examples:
     /pp add add a logout button to the header
     /pp add make the dashboard load faster
     /pp add fix login bug with special characters
 
-  Skip questions:
-    /pp add add dark mode, just capture it
+  Note: Questions and planning are ALWAYS performed — cannot be skipped.
 
 /pp work
   Processes all pending tasks. For each task:
-    1. Analyzes if research is needed (OAuth, WebSocket, Stripe, etc.)
-    2. Researches best practices (if needed)
-    3. Explores codebase for existing patterns
-    4. Plans implementation (for complex tasks)
-    5. Implements the feature
-    6. Generates Playwright tests
-    7. Runs tests in fix-retry loop (up to 10 attempts)
-    8. Archives and commits (if auto-commit enabled)
+    1. Claims the request (moves to working/)
+    2. Analyzes if research is needed (OAuth, WebSocket, Stripe, etc.)
+    3. Researches best practices (if needed)
+    4. Explores codebase for existing patterns
+    5. Loads plan from capture phase (pp/plans/)
+    6. Implements the feature
+    7. Generates Playwright tests (functionality + UI screenshots)
+    8. Runs test loop — zero tolerance on code errors (10 attempts max)
+    9. Reviews ALL screenshots for UI issues — fixes until perfect
+   10. Creates verification report
+   11. Archives and commits (if auto-commit enabled)
 
 /pp resume
   Continues work after terminal close or context reset.
-  Restores: current task, test attempts, skipped tests, decisions made.
+  Restores: current task, test attempts, skipped tests, UI issues,
+  screenshots reviewed, decisions made.
 
 /pp status
-  Shows: queue count, current task, step progress, recent completions, blockers.
+  Shows: queue count, current task, step progress, UI review status,
+  recent completions, blockers.
 
 /pp mode normal
   Pauses at decision points, asks for confirmation.
@@ -75,12 +84,19 @@ COMMAND DETAILS
   Skips destructive actions. Logs all decisions.
   Best for large queues when you'll be away.
 
+  Note: /pp add ALWAYS asks questions regardless of mode.
+  Overnight mode only affects the WORK phase (implementation checkpoints).
+
 SESSION SETUP
 ────────────────────────────────────────────────────────────────────────────────
 
-On first command, you'll be asked:
+On first command of EVERY new session, you'll be asked 4 questions:
   1. Session mode: Normal (with checkpoints) or Overnight (autonomous)
   2. Auto-commit: Yes (commit after each task) or No (manual commits)
+  3. Playwright testing: Yes (generate & run tests) or No (skip testing)
+  4. Plan verification: Verify with me (review plans) or Continue directly
+
+These are MANDATORY and asked every session — never persisted or assumed.
 
 FOLDER STRUCTURE
 ────────────────────────────────────────────────────────────────────────────────
@@ -90,10 +106,24 @@ FOLDER STRUCTURE
   ├── STATE.md              Session state for resume
   ├── config/test-env.json  Test credentials (gitignored)
   ├── research/             Auto-generated research docs
+  ├── rephrased/            Rephrased prompts from capture
+  ├── plans/                Implementation plans from capture
   ├── working/              Task currently being processed
   └── archive/              Completed tasks with verification
 
-  tests/pp/         Generated Playwright tests
+  tests/pp/                 Generated Playwright tests
+  tests/pp/screenshots/     UI screenshots from test runs
+
+TESTING — ZERO TOLERANCE
+────────────────────────────────────────────────────────────────────────────────
+
+  • Functionality tests: One per "Done When" criterion + edge cases
+  • UI screenshot tests: Full page, element, hover, mobile (375px), tablet (768px)
+  • Every test takes at least one screenshot
+  • Infrastructure errors (403, CORS, connection refused): Skip + report
+  • Code errors (500, assertion failed, element not found): Fix + retry (max 10)
+  • After tests pass: Review EVERY screenshot for UI issues
+  • Fix ALL UI issues, regenerate screenshots, repeat until perfect
 
 TIPS
 ────────────────────────────────────────────────────────────────────────────────
@@ -101,7 +131,7 @@ TIPS
   • Be specific when capturing tasks
   • Answer questions thoughtfully — they guide implementation
   • Use overnight mode for large queues
-  • Check VERIFICATION.md for skipped tests
+  • Check VERIFICATION.md for skipped tests and UI fixes
   • If stuck, run: rm pp/STATE.md
 
 TROUBLESHOOTING
@@ -111,6 +141,7 @@ TROUBLESHOOTING
   Test credentials missing → Run /pp work (will prompt)
   Session mode not set     → Run /pp status (will prompt)
   Tests keep failing       → Check for 403/401 (server-side fix needed)
+  Screenshots blurry       → Check viewport settings in test file
 
 ────────────────────────────────────────────────────────────────────────────────
 For full documentation, see: ~/.claude/skills/pp/README.md

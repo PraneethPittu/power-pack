@@ -458,7 +458,7 @@ test.describe('REQ-XXX: [Title]', () => {
 
 **SKIP this step if Playwright testing is disabled.**
 
-**ZERO TOLERANCE: Every test must pass. No skipping code-fixable failures. Only infrastructure failures can be skipped.**
+**ZERO TOLERANCE on code errors. Infrastructure/server-side errors can be skipped after reporting.**
 
 Initialize tracking:
 ```
@@ -481,19 +481,22 @@ WHILE there are non-skipped tests that haven't passed:
     3. FOR each failed test:
 
        a. Classify failure:
-          - Infrastructure ONLY (403, 401, CORS, connection refused, SSL)
-            → Mark as SKIPPED (infra) — ONLY infrastructure issues can be skipped
+          - Infrastructure (403, 401, CORS, connection refused, SSL)
+            → Mark as SKIPPED (infra) — report in VERIFICATION.md
+            → These are server-side issues, can't fix with code
 
           - Playwright crash (browser closed, target closed)
-            → Fix the test setup, retry — do NOT skip
+            → Fix the test setup, retry
+            → Count as attempt
 
           - Code issue (500, assertion failed, element not found)
             → MUST FIX — proceed to fix attempt
 
        b. Check attempt count:
-          IF test_attempts[test_name] >= max_attempts:
-            → DO NOT SKIP — analyze deeper, try different fix approach
-            → Only skip if truly unfixable (infrastructure issue)
+          IF test_attempts[test_name] >= 10:
+            → Mark as SKIPPED (max_attempts)
+            → Report in VERIFICATION.md as "needs manual investigation"
+            → Move on to next test
 
        c. Increment attempt counter:
           test_attempts[test_name] += 1

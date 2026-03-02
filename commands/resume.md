@@ -29,9 +29,11 @@ Exit.
 Read STATE.md and extract:
 - Current status (idle/working/paused)
 - Working on (REQ file)
-- Current step (claim/research/implement/test/archive)
+- Current step (claim/research/explore/plan-load/implement/test/screenshot-review/archive)
 - Test attempt counters
 - Skipped tests list
+- UI issues found/fixed count
+- Screenshots reviewed count
 - Last error context
 - Decisions made
 </step>
@@ -66,10 +68,13 @@ Continuing from [step]...
 
 | Saved Step | Resume Action |
 |------------|---------------|
-| `claim` | Re-verify claim, continue to research/implement |
+| `claim` | Re-verify claim, continue to research/explore |
 | `research` | Check if RESEARCH.md exists, continue or redo |
+| `explore` | Check exploration results, continue or redo |
+| `plan-load` | Load plan from pp/plans/, continue to implement |
 | `implement` | Check implementation status, continue or redo |
 | `test` | Resume test loop from saved attempt count |
+| `screenshot-review` | Resume screenshot review, check UI issues |
 | `archive` | Complete archival |
 
 3. Continue with the work flow as defined in /pp:work

@@ -38,9 +38,11 @@ Created automatically when work starts. Updated at each step transition.
 **Status:** [idle | working | paused]
 **Queue:** [N] pending
 **Working on:** [REQ-XXX-slug or "None"]
-**Step:** [claim | research | implement | test | archive]
+**Step:** [claim | research | explore | plan-load | implement | test | screenshot-review | archive]
 **Step detail:** [e.g., "Test attempt 4/10 on 'reconnection' test"]
 **Last activity:** [timestamp]
+**Session Mode:** [Normal | Overnight]
+**Plan Review:** [Verify with me | Continue directly]
 
 ## In Progress
 
@@ -53,6 +55,9 @@ Created automatically when work starts. Updated at each step transition.
 | Tests skipped | 0 |
 | Current test | reconnection handling |
 | Attempt | 4/10 |
+| UI issues found | 2 |
+| UI issues fixed | 1 |
+| Screenshots reviewed | 4/7 |
 | Last error | Token refresh failing on reconnect |
 
 ## Recent Completions
@@ -170,8 +175,11 @@ When user runs `/pp resume`:
 |------------|---------------|
 | `claim` | Re-claim and continue |
 | `research` | Check if RESEARCH.md exists, continue or redo |
+| `explore` | Check exploration results, continue or redo |
+| `plan-load` | Load plan from pp/plans/, continue to implement |
 | `implement` | Check implementation status, continue or redo |
 | `test` | Resume test loop from saved attempt count |
+| `screenshot-review` | Resume screenshot review, check UI issues |
 | `archive` | Complete archival |
 
 4. **Restore context:**
@@ -209,11 +217,16 @@ The work action updates STATE.md at these points:
 |-------|--------------|
 | Claim task | `status: working`, `step: claim`, task details |
 | Start research | `step: research` |
-| Research complete | `step: implement`, research file path |
+| Research complete | `step: explore` |
+| Explore complete | `step: plan-load` |
+| Plan loaded | `step: implement`, plan file path |
 | Implementation complete | `step: test` |
 | Each test attempt | `step_detail` with attempt count, last error |
 | Test skip | Add to skipped tests list |
 | Test pass | Update passed count |
+| Screenshot review start | `step: screenshot-review` |
+| UI issue found/fixed | Update UI issues count |
+| All screenshots clean | `step: archive` |
 | Archive | `status: idle`, move to recent completions |
 | Error/pause | Save full state for resume |
 
