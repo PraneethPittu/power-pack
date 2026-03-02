@@ -92,9 +92,18 @@ cd ~/.claude/skills/pp && git fetch origin main 2>/dev/null && git rev-list HEAD
 
 ---
 
-## Session Setup (First-Time Prompt)
+## Session Setup (MANDATORY — Every New Session)
 
-On the **first `/pp` command** in a new session, ask THREE questions:
+**CRITICAL: On the FIRST `/pp` command in a new session, you MUST ask these FOUR questions. NO EXCEPTIONS.**
+
+**Rules:**
+- **ALWAYS ask these 4 questions at the start of every new Claude Code session** — even if you see preferences in MEMORY.md, STATE.md, or anywhere else
+- **NEVER skip these questions** because you "already know" the preferences from a previous session
+- **NEVER persist these preferences** to MEMORY.md or any auto-memory file — they are session-only
+- Previous session preferences are INVALID — each session starts fresh
+- The only time you skip these is on subsequent `/pp` commands within the SAME session (after already asking once)
+
+Ask these FOUR questions:
 
 ### Question 1: Session Mode
 
@@ -169,9 +178,12 @@ options:
 | **Verify with me** | Display plan, ask for approval/changes before creating REQ file |
 | **Continue directly** | Display plan (always shown), proceed without waiting for confirmation |
 
-**Store all four in memory** for this session (not persisted to disk).
+**Store all four in memory** for this session ONLY.
 
-**This is asked once per Claude session.** Subsequent `/pp` commands use the stored preferences.
+**NEVER persist these to MEMORY.md, auto-memory, or any file that carries across sessions.**
+**NEVER save "PP Session Config" or similar to memory files.**
+
+These preferences are asked ONCE per Claude Code session. Subsequent `/pp` commands within the same session reuse the stored preferences. But every NEW session must ask again.
 
 To switch mode mid-session: `/pp mode normal` or `/pp mode overnight`
 
