@@ -66,6 +66,26 @@ ls ~/.claude/commands/pp/
 
 **Important:** Restart Claude Code after installation to detect the new commands.
 
+### Updating
+
+pp checks for updates automatically when you start a new session. If an update is available, you'll see:
+
+```
+pp update available! v1.0.0 → v1.1.0
+
+What's new:
+- Auto-update check on session startup
+- ...
+
+To update: cd ~/.claude/skills/pp && git pull origin main
+```
+
+Or update manually anytime:
+
+```bash
+cd ~/.claude/skills/pp && git pull origin main
+```
+
 ---
 
 ## Quick Start

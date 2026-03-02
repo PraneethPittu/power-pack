@@ -15,8 +15,12 @@ A powerful task management system that combines quick capture with deep understa
 **`/pp add` and `/pp work` are SEPARATE actions. Do NOT combine them.**
 
 ### `/pp add <task>` — Capture ONLY
-- Ask clarifying questions
-- Create REQ file(s)
+- Rephrase prompt into optimized detailed version (using agent)
+- Save rephrased prompt to `pp/rephrased/`
+- Ask clarifying questions (ALWAYS — both Normal and Overnight modes)
+- Enter plan mode and create implementation plan (EVERY task)
+- Save plan to `pp/plans/`
+- Create REQ file(s) with references to rephrased prompt and plan
 - **NEVER write code**
 - **NEVER implement anything**
 - End with: "Ready to implement? Run `/pp work`"
@@ -51,6 +55,43 @@ A powerful task management system that combines quick capture with deep understa
 
 **The work action file contains an Orchestrator Checklist. Use it.**
 
+## Update Check (First-Time Per Session)
+
+On the **first `/pp` command** in a new session, **before asking setup questions**, check for updates:
+
+1. Run this command silently:
+```bash
+cd ~/.claude/skills/pp && git fetch origin main 2>/dev/null && git rev-list HEAD..origin/main --count 2>/dev/null
+```
+
+2. **If count > 0** (updates available):
+   - Read the local VERSION file: `cat ~/.claude/skills/pp/VERSION`
+   - Read the remote VERSION: `git show origin/main:VERSION 2>/dev/null`
+   - Read the remote CHANGELOG: `git show origin/main:CHANGELOG.md 2>/dev/null`
+   - Compare major versions (e.g., 1.x.x vs 2.x.x) to determine if restart is needed
+   - Display to the user:
+   ```
+   pp update available! v[local] → v[remote]
+
+   What's new:
+   [Show the latest changelog entry from remote CHANGELOG.md]
+
+   To update:
+   cd ~/.claude/skills/pp && git pull origin main
+
+   ⚠ Restart required: Start a new Claude Code session after updating to get all changes.
+   (Action files like capture.md and work.md update immediately, but session setup questions
+   and routing changes only take effect in a new session.)
+   ```
+   - Then continue with session setup as normal
+
+3. **If count = 0 or fetch fails** (up to date or offline):
+   - Say nothing, proceed silently to session setup
+
+**This check runs ONCE per session, not on every command.** After the first check, skip it for all subsequent `/pp` commands in the same session.
+
+---
+
 ## Session Setup (First-Time Prompt)
 
 On the **first `/pp` command** in a new session, ask THREE questions:
@@ -73,7 +114,7 @@ options:
 
 **IMPORTANT: Overnight mode only affects the WORK phase (implementation checkpoints).**
 
-Capture (`/pp add`) **always asks clarifying questions** regardless of mode, unless user says "just capture it".
+Capture (`/pp add`) **ALWAYS asks clarifying questions in BOTH modes.** The only exception is if user says "just capture it".
 
 ### Question 2: Auto-Commit
 
@@ -98,21 +139,37 @@ options:
 header: "Auto-testing"
 question: "Do you want automated Playwright tests for this session?"
 options:
-- "Yes" — Generate and run Playwright tests for each task
+- "Yes" — Generate and run Playwright tests for each task (zero tolerance — functionality + UI screenshot verification)
 - "No" — Skip automated testing, I'll test manually
 ```
 
 | Setting | Behavior |
 |---------|----------|
-| **Yes** | Generate Playwright tests, run fix-retry loop (Steps 8-9) |
+| **Yes** | Generate Playwright tests (functionality + UI screenshots), run zero-tolerance fix-retry loop, screenshot review for UI issues |
 | **No** | Skip test generation, skip test credentials prompt, no VERIFICATION.md |
 
 **If "No":**
 - Don't ask for test environment credentials
-- Skip Steps 8-9 (Generate Tests, Test Loop) during `/pp work`
+- Skip Steps 8-9b (Generate Tests, Test Loop, Screenshot Review) during `/pp work`
 - Skip VERIFICATION.md generation
 
-**Store all three in memory** for this session (not persisted to disk).
+### Question 4: Plan Verification
+
+```
+[AskUserQuestion]
+header: "Plan review"
+question: "Do you want to review the implementation plan before I proceed, or should I continue directly?"
+options:
+- "Verify with me" — Show plan and ask for approval before proceeding
+- "Continue directly" — Show plan but don't wait for approval, proceed automatically
+```
+
+| Setting | Behavior |
+|---------|----------|
+| **Verify with me** | Display plan, ask for approval/changes before creating REQ file |
+| **Continue directly** | Display plan (always shown), proceed without waiting for confirmation |
+
+**Store all four in memory** for this session (not persisted to disk).
 
 **This is asked once per Claude session.** Subsequent `/pp` commands use the stored preferences.
 
@@ -165,10 +222,13 @@ If input doesn't match a known command but has content:
 
 | Aspect | do-work | pp (power-pack) |
 |--------|---------|-----------------|
-| Questioning | Minimal | Collaborative (GSD-style) |
+| Prompt quality | As-is | Auto-rephrased for maximum output |
+| Questioning | Minimal | Collaborative (both modes) |
+| Planning | None | Plan mode for every task |
 | Research | None | Auto-detect & research unfamiliar tech |
-| Testing | Runs existing | Generates Playwright tests |
-| Test failures | Mark failed | Fix-retry loop (up to 10x) |
+| Testing | Runs existing | Zero-tolerance functionality + UI screenshot tests |
+| Test failures | Mark failed | Fix-retry loop — must reach 100% pass |
+| UI verification | None | Screenshot review with alignment/spacing checks |
 | State tracking | Frontmatter | STATE.md for resume |
 | Checkpoints | None | Normal/Overnight modes |
 
@@ -195,6 +255,10 @@ pp/
 ├── STATE.md                   # Current state, decisions, blockers
 ├── config/
 │   └── test-env.json         # Test credentials (gitignored)
+├── rephrased/                 # Optimized prompts (from capture step 1)
+│   └── REQ-001-rephrased.md
+├── plans/                     # Implementation plans (from capture step 6)
+│   └── REQ-001-plan.md
 ├── research/
 │   └── REQ-015-RESEARCH.md   # Auto-generated research docs
 ├── user-requests/             # Verbatim input preservation
@@ -210,5 +274,11 @@ pp/
 
 tests/
 └── pp/                        # Generated Playwright tests
-    └── REQ-001-task.spec.js
+    ├── REQ-001-task.spec.js
+    └── screenshots/           # UI verification screenshots
+        └── REQ-001/
+            ├── ui-initial-fullpage.png
+            ├── ui-feature-element.png
+            ├── ui-mobile.png
+            └── ui-tablet.png
 ```

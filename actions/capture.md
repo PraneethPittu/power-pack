@@ -8,15 +8,17 @@
 
 **NEVER do any of the following during capture:**
 - Write code
-- Create project files
+- Create project files (except pp/ files)
 - Install dependencies
 - Run commands (except mkdir for pp/ folder)
-- Explore codebase for implementation
 - Start building features
 
 **ONLY do these during capture:**
+- Rephrase the user's prompt (using an agent)
 - Ask clarifying questions
+- Enter plan mode and create a plan
 - Create `pp/REQ-*.md` files
+- Create `pp/rephrased/` and `pp/plans/` files
 - Create `pp/user-requests/UR-*/` folders
 - Set up test config (if first time)
 - Update `pp/STATE.md`
@@ -37,23 +39,25 @@ Ready to implement? Run `/pp work`
 **Before capturing ANY task, complete this checklist in order:**
 
 - [ ] **Step 0:** If Playwright testing is enabled AND `pp/config/test-env.json` doesn't exist → Ask for test credentials FIRST
-- [ ] **Step 1:** Read and understand user's request
-- [ ] **Step 2:** Ask clarifying questions if needed
-- [ ] **Step 3:** Check for existing similar requests
-- [ ] **Step 4:** Assess complexity (simple vs complex)
-- [ ] **Step 5:** Create REQ file(s) and update STATE.md
+- [ ] **Step 1:** Rephrase the user's prompt into an optimized, detailed prompt using an agent
+- [ ] **Step 2:** Show rephrased prompt to user and save to `pp/rephrased/`
+- [ ] **Step 3:** Ask clarifying questions (ALWAYS — both Normal and Overnight modes)
+- [ ] **Step 4:** Check for existing similar requests
+- [ ] **Step 5:** Assess complexity (simple vs complex)
+- [ ] **Step 6:** Enter plan mode — create a detailed plan for the task (EVERY task, no exceptions)
+- [ ] **Step 7:** Save plan to `pp/plans/` and show to user (verify or auto-continue based on session preference)
+- [ ] **Step 8:** Create REQ file(s) with rephrased prompt + plan references, update STATE.md
 
-**DO NOT SKIP Step 0.** Test credentials must be collected before the first capture if Playwright testing is enabled.
+**DO NOT SKIP any step.** Every step is mandatory for every task.
 
 ---
 
-## IMPORTANT: Overnight Mode Does NOT Skip Capture Questions
+## IMPORTANT: ALWAYS Ask Questions — Both Modes
 
-**Overnight mode only affects the WORK phase** (auto-selects at checkpoints during implementation).
+**Clarifying questions are MANDATORY in BOTH Normal and Overnight modes.**
 
 During capture, **ALWAYS ask clarifying questions** regardless of session mode, unless:
 - User explicitly says "just capture it" or "figure it out"
-- Request is extremely specific with clear success criteria (rare)
 
 Even detailed/long requests (500+ words) still need questions about:
 - Success criteria: "How will you know it's working?"
@@ -61,6 +65,8 @@ Even detailed/long requests (500+ words) still need questions about:
 - Scope boundaries: "Should this include X or just Y?"
 
 **The length of a request does NOT equal clarity.**
+
+**Overnight mode only affects the WORK phase** (auto-selects at checkpoints during implementation). Capture behavior is identical in both modes.
 
 ---
 
@@ -377,12 +383,83 @@ cat pp/config/test-env.json 2>/dev/null
 
 ---
 
-### Step 1: Read and Understand
+### Step 1: Rephrase the Prompt (MANDATORY)
 
-Read the user's input. Before doing anything:
+**CRITICAL: Before anything else, rephrase the user's raw prompt into an optimized, detailed prompt that will extract maximum output from Claude Code.**
+
+1. **Create rephrased folder:**
+```bash
+mkdir -p pp/rephrased
+```
+
+2. **Spawn a general-purpose agent** to rephrase:
+
+```
+Agent(prompt="
+You are an expert prompt engineer. Your job is to take a user's raw task description and rephrase it into the BEST possible prompt that would extract maximum quality output from Claude Code (an AI coding assistant).
+
+## Raw User Prompt:
+[paste user's exact input here]
+
+## Your Task:
+Rephrase this into a detailed, actionable, well-structured prompt that:
+- Clearly states the objective
+- Breaks down what needs to be done into specific, concrete requirements
+- Specifies expected behavior and edge cases
+- Includes success criteria (what 'done' looks like)
+- Mentions quality standards (accessibility, responsiveness, error handling)
+- Uses precise technical language where appropriate
+- Is structured with clear sections (Objective, Requirements, Expected Behavior, Success Criteria)
+
+## Rules:
+- Do NOT add fictional requirements — only expand and clarify what the user intended
+- Do NOT change the user's intent — enhance the clarity and detail
+- Keep the scope the same — don't inflate the task
+- Make it actionable for an AI coding assistant
+- Use markdown formatting for readability
+
+Return ONLY the rephrased prompt, nothing else.
+", subagent_type="general-purpose")
+```
+
+3. **Save the rephrased prompt** to `pp/rephrased/REQ-XXX-rephrased.md`:
+
+```markdown
+---
+id: REQ-XXX
+original_prompt: "[user's raw input]"
+rephrased_at: [timestamp]
+---
+
+# Rephrased Prompt: [Brief Title]
+
+[Rephrased prompt from agent]
+
+---
+*Original: "[user's raw input]"*
+*Rephrased by prompt engineering agent*
+```
+
+4. **Show the rephrased prompt to the user:**
+
+```
+Rephrased your task for maximum effectiveness:
+
+[Show the rephrased prompt]
+
+Proceeding with this enhanced prompt for capture...
+```
+
+**Now use the rephrased prompt (not the original) for all subsequent steps.**
+
+---
+
+### Step 2: Read and Understand (Using Rephrased Prompt)
+
+Read the **rephrased prompt**. Before doing anything:
 - What are they trying to accomplish?
 - Is it clear enough to capture?
-- What's ambiguous or missing?
+- What's still ambiguous or missing even after rephrasing?
 
 **Quick mental checklist:**
 - [ ] What they want (concrete enough to explain to a stranger)
@@ -391,9 +468,12 @@ Read the user's input. Before doing anything:
 
 If gaps remain, ask questions. If clear, proceed to capture.
 
-### Step 2: Question If Needed
+### Step 3: Question (ALWAYS — Both Modes)
 
-If anything is unclear:
+**ALWAYS ask clarifying questions regardless of session mode (Normal or Overnight).**
+
+The only exception: user explicitly says "just capture it" or "figure it out".
+
 1. Pick the most important gap
 2. Ask ONE focused question using AskUserQuestion
 3. Build on their answer
@@ -401,9 +481,9 @@ If anything is unclear:
 
 **Follow the energy:** Whatever they emphasized, dig into that. What excited them? What problem sparked this?
 
-**Know when to stop:** When you understand what they want, why they want it, and what done looks like — proceed to capture.
+**Know when to stop:** When you understand what they want, why they want it, and what done looks like — proceed.
 
-### Step 3: Check for Existing Requests
+### Step 4: Check for Existing Requests
 
 Before creating new files, check:
 - `pp/` (pending queue)
@@ -418,7 +498,7 @@ Before creating new files, check:
 | Working | Create addendum REQ (can't modify in-progress) |
 | Archive | Create new REQ or addendum |
 
-### Step 4: Assess Complexity
+### Step 5: Assess Complexity
 
 **Simple request** (1-2 features, <200 words, clear scope):
 - Quick capture, lean format
@@ -429,7 +509,93 @@ Before creating new files, check:
 - Multiple REQ files with cross-references
 - Batch constraints captured
 
-### Step 5: Create Request Files
+### Step 6: Plan the Task (MANDATORY — Every Task)
+
+**CRITICAL: You MUST enter plan mode for EVERY task, no exceptions.**
+
+This step uses Claude Code's plan mode to create a detailed implementation plan for the task. Plan mode is the best way to think through implementation before writing code.
+
+1. **Create plans folder:**
+```bash
+mkdir -p pp/plans
+```
+
+2. **Enter plan mode** using the EnterPlanMode tool. In plan mode:
+   - Explore the codebase thoroughly (use Glob, Grep, Read)
+   - Understand existing patterns and architecture
+   - Design the implementation approach
+   - Identify files to create/modify
+   - Consider edge cases and potential issues
+   - Create a step-by-step implementation plan
+
+3. **After planning, save the plan** to `pp/plans/REQ-XXX-plan.md`:
+
+```markdown
+---
+id: REQ-XXX
+title: [Brief Title]
+planned_at: [timestamp]
+files_to_modify: [list of files]
+estimated_complexity: simple | moderate | complex
+---
+
+# Implementation Plan: [Title]
+
+## Objective
+[What this plan achieves]
+
+## Codebase Analysis
+[Key findings from exploring the codebase]
+
+## Implementation Steps
+1. [Step 1 — specific file + what to change]
+2. [Step 2 — specific file + what to change]
+3. ...
+
+## Files to Create/Modify
+| File | Action | Description |
+|------|--------|-------------|
+| path/to/file.js | modify | Add logout handler |
+| path/to/new.js | create | New component |
+
+## Edge Cases & Considerations
+- [Edge case 1]
+- [Edge case 2]
+
+## Testing Strategy
+- [What to test]
+- [Expected assertions]
+
+---
+*Generated in plan mode*
+```
+
+4. **Check session preference for plan verification:**
+
+   **If user selected "Verify plan with me" during session setup:**
+   - Display the full plan to the user
+   - Ask:
+   ```
+   [AskUserQuestion]
+   header: "Plan Review"
+   question: "Does this plan look good, or do you want to add/change anything?"
+   options:
+   - "Looks good, proceed" — Continue with this plan
+   - "I have changes" — Let me suggest modifications
+   - "Redo the plan" — Start planning from scratch
+   ```
+   - If user has changes: incorporate them, update the plan file, show again
+   - If redo: re-enter plan mode
+
+   **If user selected "Continue directly" during session setup:**
+   - Display the plan to the user (always show it)
+   - Continue without waiting for confirmation
+
+5. **Link the plan in the REQ file** (in Step 8)
+
+---
+
+### Step 7: Create Request Files
 
 #### Folder Structure
 
@@ -453,13 +619,15 @@ title: Brief descriptive title
 status: pending
 created_at: 2025-01-26T10:00:00Z
 user_request: UR-001
+rephrased_prompt: pp/rephrased/REQ-001-rephrased.md
+plan: pp/plans/REQ-001-plan.md
 test_url: https://example.com/dashboard
 ---
 
 # [Brief Title]
 
 ## What
-[1-3 sentences describing what is being requested]
+[1-3 sentences describing what is being requested — from rephrased prompt]
 
 ## Why
 [The problem this solves or value it provides — from questioning]
@@ -471,11 +639,19 @@ test_url: https://example.com/dashboard
 ## Context
 [Any additional context, constraints, or details mentioned]
 
+## Rephrased Prompt
+See [pp/rephrased/REQ-001-rephrased.md] for the enhanced prompt.
+
+## Implementation Plan
+See [pp/plans/REQ-001-plan.md] for the detailed plan.
+
 ## Assets
 [Screenshots or links to reference materials]
 
 ---
 *Captured after [N] clarifying questions*
+*Rephrased prompt: pp/rephrased/REQ-001-rephrased.md*
+*Plan: pp/plans/REQ-001-plan.md*
 *Source: [original verbatim request]*
 ```
 
@@ -488,6 +664,8 @@ title: OAuth login flow
 status: pending
 created_at: 2025-01-26T10:00:00Z
 user_request: UR-001
+rephrased_prompt: pp/rephrased/REQ-005-rephrased.md
+plan: pp/plans/REQ-005-plan.md
 related: [REQ-006, REQ-007]
 batch: auth-system
 test_url: https://example.com/login
@@ -496,7 +674,7 @@ test_url: https://example.com/login
 # OAuth Login Flow
 
 ## What
-[Clear description of the feature]
+[Clear description of the feature — from rephrased prompt]
 
 ## Why
 [Problem being solved — from motivation questions]
@@ -521,17 +699,27 @@ test_url: https://example.com/login
 ## Open Questions
 [Ambiguities the builder should clarify]
 
+## Rephrased Prompt
+See [pp/rephrased/REQ-005-rephrased.md] for the enhanced prompt.
+
+## Implementation Plan
+See [pp/plans/REQ-005-plan.md] for the detailed plan.
+
 ## Full Context
 See [user-requests/UR-001/input.md](./user-requests/UR-001/input.md) for complete verbatim input.
 
 ---
 *Captured after [N] clarifying questions*
+*Rephrased prompt: pp/rephrased/REQ-005-rephrased.md*
+*Plan: pp/plans/REQ-005-plan.md*
 ```
 
-### Step 6: Report Back
+### Step 8: Create Request Files and Report Back
+
+Create the REQ file(s) using the formats above, with references to the rephrased prompt and plan files.
 
 After creating files:
-- List what was created
+- List what was created (REQ, rephrased prompt, plan)
 - Summarize what was captured (reflecting the clarified understanding)
 - Keep it concise
 
@@ -540,6 +728,8 @@ Captured: Dashboard load time optimization
 
 - Target: Under 2 seconds initial load
 - Focus: Initial page render, not data refresh
+- Rephrased: pp/rephrased/REQ-008-rephrased.md
+- Plan: pp/plans/REQ-008-plan.md
 - Created: REQ-008-dashboard-load-time.md
 
 Ready to process? Run `/pp work`
