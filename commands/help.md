@@ -12,7 +12,7 @@ Display comprehensive help documentation for all power-pack commands.
 Output the following help text:
 
 ```
-POWER-PACK HELP
+POWER-PACK v2.0 HELP
 
 A powerful task management skill combining do-work speed with GSD intelligence.
 
@@ -29,8 +29,12 @@ COMMAND DETAILS
 ---------------
 
 /pp:add <description>
-  Captures a task and adds it to the queue. Asks clarifying questions to
-  understand your intent before creating the request.
+  Captures a task with the full capture pipeline:
+    1. Rephrases your prompt into an optimized detailed version (agent)
+    2. Asks clarifying questions (ALWAYS — both Normal and Overnight modes)
+    3. Enters plan mode to create implementation plan (EVERY task)
+    4. Shows plan for review (based on session preference)
+    5. Creates REQ file with rephrased prompt + plan references
 
   Examples:
     /pp:add add a logout button to the header
@@ -42,14 +46,17 @@ COMMAND DETAILS
 
 /pp:work
   Processes all pending tasks. For each task:
-    1. Analyzes if research is needed (OAuth, WebSocket, Stripe, etc.)
-    2. Researches best practices (if needed)
-    3. Explores codebase for existing patterns
-    4. Plans implementation (for complex tasks)
-    5. Implements the feature
-    6. Generates Playwright tests (if enabled)
-    7. Runs tests in fix-retry loop (up to 10 attempts)
-    8. Archives and commits (if auto-commit enabled)
+    1. Claims task (moves to working/)
+    2. Analyzes if research is needed (OAuth, WebSocket, Stripe, etc.)
+    3. Researches best practices (if needed)
+    4. Explores codebase for existing patterns
+    5. Loads implementation plan (from capture phase)
+    6. Implements the feature
+    7. Generates Playwright tests — functionality + UI screenshots (if enabled)
+    8. Runs tests with ZERO TOLERANCE (must reach 100% pass)
+    9. Reviews ALL screenshots for UI issues (alignment, spacing, responsive)
+   10. Loops UI fixes until every screenshot is perfect
+   11. Archives and commits (if auto-commit enabled)
 
 /pp:resume
   Continues work after terminal close or context reset.
@@ -66,13 +73,14 @@ COMMAND DETAILS
   Runs autonomously, auto-selects recommended options.
   Skips destructive actions. Logs all decisions.
   Best for large queues when you'll be away.
+  Note: Capture (/pp:add) ALWAYS asks questions regardless of mode.
 
-SESSION SETUP
--------------
-On first /pp:add or /pp:work command, you'll be asked:
+SESSION SETUP (4 questions, asked every new session)
+-----------------------------------------------------
   1. Session mode: Normal (with checkpoints) or Overnight (autonomous)
   2. Auto-commit: Yes (commit after each task) or No (manual commits)
-  3. Playwright testing: Yes (generate tests) or No (skip testing)
+  3. Playwright testing: Yes (zero-tolerance testing) or No (skip testing)
+  4. Plan verification: Verify with me (review plan) or Continue directly
 
 If Playwright testing is enabled, you'll also be asked for test credentials.
 
@@ -82,18 +90,29 @@ FOLDER STRUCTURE
   ├── REQ-*.md              Pending tasks (queue)
   ├── STATE.md              Session state for resume
   ├── config/test-env.json  Test credentials (gitignored)
+  ├── rephrased/            Optimized prompts (from capture)
+  ├── plans/                Implementation plans (from capture)
   ├── research/             Auto-generated research docs
   ├── working/              Task currently being processed
   └── archive/              Completed tasks with verification
 
   tests/pp/                 Generated Playwright tests
+  tests/pp/screenshots/     UI verification screenshots
+
+KEY FEATURES (v2.0)
+-------------------
+  - Prompt rephrasing: Every task prompt is optimized by an agent
+  - Mandatory planning: Every task enters plan mode during capture
+  - Zero-tolerance testing: Functionality + UI screenshot verification
+  - Screenshot review: Checks alignment, spacing, responsive, visual issues
+  - Questions in both modes: Capture always asks questions (Normal + Overnight)
 
 TIPS
 ----
   - Be specific when capturing tasks
   - Answer questions thoughtfully - they guide implementation
   - Use overnight mode for large queues
-  - Check VERIFICATION.md for skipped tests
+  - Check VERIFICATION.md for test results and UI fixes
   - If stuck, run: rm pp/STATE.md
 
 TROUBLESHOOTING
@@ -102,6 +121,11 @@ TROUBLESHOOTING
   Test credentials missing -> Run /pp:add (will prompt if Playwright enabled)
   Session mode not set     -> Run /pp:status (will prompt)
   Tests keep failing       -> Check for 403/401 (server-side fix needed)
+
+UPDATE
+------
+  To update: cd ~/.claude/skills/pp && git pull origin main
+  Check version: cat ~/.claude/skills/pp/VERSION
 ```
 
 </process>

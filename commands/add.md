@@ -5,24 +5,31 @@ argument-hint: <task description>
 ---
 
 <objective>
-Capture a task with collaborative questioning to understand intent before creating the request. This action ONLY captures - it does NOT implement.
+Capture a task with prompt rephrasing, collaborative questioning, and mandatory planning. This action ONLY captures - it does NOT implement.
 </objective>
+
+<enforcement>
+## STRICT COMPLIANCE REQUIRED
+
+**You MUST follow EVERY step below in EXACT order. DO NOT skip, reorder, or combine steps.**
+
+**If you skip any step, the capture is INVALID and must be redone.**
+
+**READ the full action file BEFORE doing anything:**
+```bash
+cat ~/.claude/skills/pp/actions/capture.md
+```
+
+**Follow the action file instructions step by step. The steps below are a summary — the action file has full details.**
+</enforcement>
 
 <critical_rules>
 **NEVER do any of the following during capture:**
 - Write code
-- Create project files
+- Create project files (except pp/ files)
 - Install dependencies
-- Run commands (except mkdir for pp/ folder)
 - Explore codebase for implementation
 - Start building features
-
-**ONLY do these during capture:**
-- Ask clarifying questions
-- Create `pp/REQ-*.md` files
-- Create `pp/user-requests/UR-*/` folders
-- Set up test config (if first time)
-- Update `pp/STATE.md`
 
 **After capture, tell the user:**
 ```
@@ -30,10 +37,16 @@ Captured: [task summary]
 
 Ready to implement? Run /pp:work
 ```
+
+**DO NOT automatically start implementation. Wait for /pp:work.**
 </critical_rules>
 
 <session_setup>
-**On first /pp:add in a new session, ask THREE questions:**
+## SESSION SETUP — MANDATORY, EVERY NEW SESSION
+
+**CRITICAL: You MUST ask these FOUR questions on the FIRST /pp command in a new session.**
+**NEVER skip these. NEVER assume answers from memory, MEMORY.md, STATE.md, or any saved file.**
+**Each new Claude Code session starts FRESH — previous preferences are INVALID.**
 
 **Question 1: Session Mode**
 ```
@@ -61,164 +74,148 @@ options:
 header: "Auto-testing"
 question: "Do you want automated Playwright tests?"
 options:
-- "Yes" — Generate and run Playwright tests for each task
+- "Yes" — Generate and run Playwright tests (zero tolerance — functionality + UI screenshots)
 - "No" — Skip automated testing, I'll test manually
 ```
 
-**Store all three in pp/STATE.md.**
+**Question 4: Plan Verification**
+```
+[AskUserQuestion]
+header: "Plan review"
+question: "Do you want to review the implementation plan before I proceed?"
+options:
+- "Verify with me" — Show plan and ask for approval before proceeding
+- "Continue directly" — Show plan but proceed automatically
+```
+
+**Store in memory for THIS session only. NEVER persist to MEMORY.md or auto-memory files.**
 </session_setup>
 
 <process>
 
 <step name="step0_test_env">
-## Step 0: Test Environment Setup (CRITICAL - Do First)
+## Step 0: Test Environment Setup
 
-**If Playwright testing is enabled AND `pp/config/test-env.json` does NOT exist:**
+**If Playwright enabled AND `pp/config/test-env.json` doesn't exist:**
+- Ask for test credentials (.env path or manual input)
+- Create `pp/config/test-env.json`
+- Add to `.gitignore`
 
-```bash
-cat pp/config/test-env.json 2>/dev/null || echo "NOT_FOUND"
-```
-
-If NOT_FOUND and Playwright enabled:
-
-```
-[AskUserQuestion]
-header: "Test Config"
-question: "I need test credentials for Playwright. Do you have a .env file?"
-options:
-- "Yes, I have .env" — I'll provide the path
-- "No .env file" — I'll provide credentials directly
-- "No login yet" — Skip for now (no auth system yet)
-```
-
-**If user has .env:** Ask for path, read it, extract credentials.
-
-**If no .env:** Ask for:
-- Login URL (e.g., https://example.com/login)
-- Username
-- Password
-- Base URL
-
-**Create config:**
-```bash
-mkdir -p pp/config
-```
-
-Write `pp/config/test-env.json`:
-```json
-{
-  "loginUrl": "https://example.com/login",
-  "username": "test_user",
-  "password": "***",
-  "baseUrl": "https://example.com",
-  "createdAt": "[timestamp]"
-}
-```
-
-Add to .gitignore:
-```bash
-echo "pp/config/test-env.json" >> .gitignore
-```
-
-**If "No login yet":** Create placeholder config with `"status": "pending"` and note tests will be skipped.
+**If exists or Playwright disabled:** Skip to Step 1.
 </step>
 
-<step name="step1_understand">
-## Step 1: Read and Understand
+<step name="step1_rephrase">
+## Step 1: REPHRASE THE PROMPT (MANDATORY)
 
-Read the user's input. Check:
+**DO NOT SKIP THIS STEP.**
+
+```bash
+mkdir -p pp/rephrased
+```
+
+Spawn a **general-purpose agent** to rephrase the user's raw prompt into an optimized, detailed prompt that will extract maximum quality output from Claude Code.
+
+The agent should:
+- Clearly state the objective
+- Break down requirements into specific, concrete items
+- Specify expected behavior and edge cases
+- Include success criteria
+- Use precise technical language
+- NOT add fictional requirements — only expand and clarify
+- NOT change the user's intent
+
+**Save to** `pp/rephrased/REQ-XXX-rephrased.md`
+
+**Show the rephrased prompt to the user.**
+
+**Use the rephrased prompt (not the original) for all subsequent steps.**
+</step>
+
+<step name="step2_understand">
+## Step 2: Read and Understand
+
+Read the **rephrased prompt**. Check:
 - [ ] What they want (concrete enough to explain)
 - [ ] Why it matters (the problem or desire)
 - [ ] What done looks like (observable outcome)
 
-If gaps remain, ask questions. If clear, proceed to capture.
+If gaps remain, ask questions.
 </step>
 
-<step name="step2_question">
-## Step 2: Question If Needed
+<step name="step3_question">
+## Step 3: Ask Clarifying Questions (MANDATORY — BOTH MODES)
 
-**ASK when:**
-- Vague outcome: "make it better" → Better how?
-- Unclear scope: "fix the search" → Which part?
-- Missing context: "add a button" → Where?
-- No success criteria: "make it faster" → How fast?
+**ALWAYS ask clarifying questions regardless of session mode (Normal or Overnight).**
+**The ONLY exception: user explicitly says "just capture it" or "figure it out".**
 
-**DON'T ASK when:**
-- Request is truly specific with clear success criteria
-- User says "just capture it" or "figure it out"
+1. Pick the most important gap
+2. Ask ONE focused question using AskUserQuestion
+3. Build on their answer
+4. Repeat until clear (usually 1-3 questions max)
 
-Use AskUserQuestion with 2-4 concrete options plus "Let me explain".
-
-**Usually 1-3 questions max.**
+**ASK when:** Vague outcome, unclear scope, missing context, no success criteria
 </step>
 
-<step name="step3_check_existing">
-## Step 3: Check for Existing Requests
+<step name="step4_check_existing">
+## Step 4: Check for Existing Requests
 
 ```bash
 ls pp/REQ-*.md pp/working/REQ-*.md pp/archive/*/REQ-*.md 2>/dev/null
 ```
 
-If similar exists:
-- In queue → Ask: update existing or create new?
-- In working → Create addendum REQ
-- In archive → Create new REQ
+If similar exists: Ask update or create new?
 </step>
 
-<step name="step4_complexity">
-## Step 4: Assess Complexity
+<step name="step5_complexity">
+## Step 5: Assess Complexity
 
 **Simple** (1-2 features, clear scope): Quick capture, lean format
 **Complex** (3+ features, 500+ words): Full UR folder, multiple REQs
 </step>
 
-<step name="step5_create">
-## Step 5: Create Request Files
+<step name="step6_plan">
+## Step 6: PLAN THE TASK (MANDATORY — EVERY TASK)
+
+**DO NOT SKIP THIS STEP. Every task gets a plan, no exceptions.**
 
 ```bash
-mkdir -p pp/config pp/research pp/working pp/archive pp/user-requests tests/pp
+mkdir -p pp/plans
 ```
 
-**REQ Format:**
-```markdown
----
-id: REQ-001
-title: Brief descriptive title
-status: pending
-created_at: [timestamp]
-user_request: UR-001
-test_url: [if known]
----
-
-# [Brief Title]
-
-## What
-[1-3 sentences]
-
-## Why
-[Problem/value from questioning]
-
-## Done When
-[Observable outcomes - these become Playwright assertions]
-
-## Context
-[Additional details]
-
----
-*Captured after [N] clarifying questions*
-```
-
-**Update STATE.md** with new task in queue.
+1. **Enter plan mode** using the EnterPlanMode tool
+2. In plan mode: explore codebase, understand patterns, design implementation, identify files, consider edge cases
+3. **Save plan** to `pp/plans/REQ-XXX-plan.md`
+4. **Show plan to user** (always)
+5. **If "Verify with me":** Ask for approval/changes before proceeding
+6. **If "Continue directly":** Show plan and continue without waiting
 </step>
 
-<step name="step6_report">
-## Step 6: Report Back
+<step name="step7_create">
+## Step 7: Create Request Files
+
+```bash
+mkdir -p pp/config pp/research pp/working pp/archive pp/rephrased pp/plans pp/user-requests tests/pp
+```
+
+Create REQ file with:
+- References to `pp/rephrased/REQ-XXX-rephrased.md`
+- References to `pp/plans/REQ-XXX-plan.md`
+- "Done When" criteria from questioning
+- All context from rephrased prompt
+
+Update STATE.md with new task in queue.
+</step>
+
+<step name="step8_report">
+## Step 8: Report Back
 
 ```
 Captured: [task summary]
 
 - [Key detail 1]
 - [Key detail 2]
+- Rephrased: pp/rephrased/REQ-XXX-rephrased.md
+- Plan: pp/plans/REQ-XXX-plan.md
 - Created: REQ-XXX-[slug].md
 
 Ready to implement? Run /pp:work
@@ -227,48 +224,16 @@ Ready to implement? Run /pp:work
 
 </process>
 
-<examples>
-
-**Vague → Clarified:**
-```
-User: /pp:add make the app faster
-
-Claude: [AskUserQuestion] What feels slow?
-User: Page loads
-Claude: [AskUserQuestion] Which pages?
-User: Dashboard
-Claude: [AskUserQuestion] How fast should it be?
-User: Under 2 seconds
-
-Claude: Created REQ-012-dashboard-performance.md
-Captured: Dashboard must load in under 2 seconds.
-Ready to implement? Run /pp:work
-```
-
-**Already Clear:**
-```
-User: /pp:add add logout button in header that redirects to /login
-
-Claude: Created REQ-013-logout-button.md
-Captured: Logout button in header, redirects to /login.
-Ready to implement? Run /pp:work
-```
-
-**Skip Questions:**
-```
-User: /pp:add add dark mode, just capture it
-
-Claude: Created REQ-025-dark-mode.md
-Captured as-is: "add dark mode"
-Ready to implement? Run /pp:work
-```
-
-</examples>
-
 <anti_patterns>
+## What NOT to Do
+- Don't skip the rephrase step — EVERY task gets rephrased
+- Don't skip questions — ALWAYS ask (both modes)
+- Don't skip planning — EVERY task enters plan mode
+- Don't skip showing rephrased prompt to user
+- Don't skip showing plan to user
 - Don't ask about implementation details
-- Don't refuse to capture "vague" requests - ask questions first
+- Don't refuse to capture "vague" requests — ask questions first
 - Don't ask more than 3-4 questions
-- Don't interrogate - collaborate
-- Don't start implementing - wait for /pp:work
+- Don't start implementing — wait for /pp:work
+- Don't persist session preferences to MEMORY.md
 </anti_patterns>
