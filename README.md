@@ -71,10 +71,10 @@ ls ~/.claude/commands/pp/
 pp checks for updates automatically when you start a new session. If an update is available, you'll see:
 
 ```
-pp update available! v1.0.0 → v1.1.0
+pp update available! v2.0.0 → v2.1.0
 
 What's new:
-- Auto-update check on session startup
+- Example improvement
 - ...
 
 To update: cd ~/.claude/skills/pp && git pull origin main
@@ -160,11 +160,12 @@ This creates `pp/config/test-env.json` (gitignored). If you choose "No login yet
 The skill will:
 1. Research (if unfamiliar tech detected)
 2. Explore your codebase for patterns
-3. Plan (if complex task)
+3. Load implementation plan (created during capture)
 4. Implement the feature
-5. Generate Playwright tests
-6. Run tests in a loop (fix failures, retry)
-7. Archive and commit (if enabled)
+5. Generate Playwright tests (functionality + UI screenshots)
+6. Run tests in a loop (fix failures, retry up to 10 attempts)
+7. Review all screenshots for UI issues (fix until perfect)
+8. Archive and commit (if enabled)
 
 ---
 
